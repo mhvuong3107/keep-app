@@ -1,0 +1,185 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: 'Roboto', 'Google Sans', sans-serif;
+  --font-display: 'Google Sans', 'Roboto', sans-serif;
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-keep-header: hsl(var(--keep-header));
+  --color-keep-header-foreground: hsl(var(--keep-header-foreground));
+  --color-keep-search: hsl(var(--keep-search));
+  --color-keep-sidebar: hsl(var(--keep-sidebar));
+  --color-keep-sidebar-hover: hsl(var(--keep-sidebar-hover));
+  --color-keep-sidebar-active: hsl(var(--keep-sidebar-active));
+  --color-keep-icon: hsl(var(--keep-icon));
+  --color-keep-toolbar: hsl(var(--keep-toolbar));
+
+  --color-note: hsl(var(--note-default));
+  --color-note-coral: hsl(var(--note-coral));
+  --color-note-peach: hsl(var(--note-peach));
+  --color-note-sand: hsl(var(--note-sand));
+  --color-note-mint: hsl(var(--note-mint));
+  --color-note-sage: hsl(var(--note-sage));
+  --color-note-fog: hsl(var(--note-fog));
+  --color-note-storm: hsl(var(--note-storm));
+  --color-note-dusk: hsl(var(--note-dusk));
+  --color-note-blossom: hsl(var(--note-blossom));
+  --color-note-clay: hsl(var(--note-clay));
+  --color-note-chalk: hsl(var(--note-chalk));
+
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+}
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 13%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 206 5.5% 24.9%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 13%;
+
+  --primary: 217 89% 61%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 0 0% 13%;
+
+  --muted: 220 14% 96%;
+  --muted-foreground: 0 0% 45%;
+
+  --accent: 43 96% 56%;
+  --accent-foreground: 0 0% 13%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 0 0% 88%;
+  --input: 0 0% 88%;
+  --ring: 217 89% 61%;
+
+  --radius: 0.5rem;
+
+  /* Keep-specific colors */
+  --keep-header: 0 0% 100%;
+  --keep-header-foreground: 0 0% 38%;
+  --keep-search: 213.333, 43%, 96%;
+  --keep-sidebar: 0 0% 100%;
+  --keep-sidebar-hover: 213.333, 43%, 96%;
+  --keep-sidebar-active: 43 100% 88%;
+  --keep-icon: 0 0% 38%;
+  --keep-toolbar: 0 0% 38%;
+
+  /* Note card colors */
+  --note-default: 0 0% 100%;
+  --note-coral: 0 77% 87%;
+  --note-peach: 28 100% 86%;
+  --note-sand: 43 87% 82%;
+  --note-mint: 150 60% 83%;
+  --note-sage: 150 30% 80%;
+  --note-fog: 210 30% 88%;
+  --note-storm: 220 20% 82%;
+  --note-dusk: 270 30% 86%;
+  --note-blossom: 330 50% 88%;
+  --note-clay: 15 40% 82%;
+  --note-chalk: 60 20% 90%;
+
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 0 0% 38%;
+  --sidebar-primary: 0 0% 13%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 43 100% 88%;
+  --sidebar-accent-foreground: 0 0% 13%;
+  --sidebar-border: 0 0% 88%;
+  --sidebar-ring: 217 89% 61%;
+}
+
+.dark {
+  --background: 0 0% 7%;
+  --foreground: 0 0% 90%;
+  --card: 0 0% 15%;
+  --card-foreground: 0 0% 90%;
+  --popover: 0 0% 15%;
+  --popover-foreground: 0 0% 90%;
+  --primary: 217 89% 61%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 18%;
+  --secondary-foreground: 0 0% 90%;
+  --muted: 0 0% 18%;
+  --muted-foreground: 0 0% 60%;
+  --accent: 43 96% 56%;
+  --accent-foreground: 0 0% 13%;
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 22%;
+  --input: 0 0% 22%;
+  --ring: 217 89% 61%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Roboto', 'Google Sans', sans-serif;
+  }
+}
+
+@utility keep-shadow {
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
+}
+
+@utility keep-shadow-hover {
+  box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+}
+
+@utility keep-border {
+  border: 1px solid hsl(var(--border));
+}
