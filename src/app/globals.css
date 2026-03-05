@@ -4,8 +4,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: 'Roboto', 'Google Sans', sans-serif;
-  --font-display: 'Google Sans', 'Roboto', sans-serif;
+  --font-sans: 'Arial', 'Google Sans', sans-serif;
+  --font-display: 'Product Sans', 'Arial', sans-serif;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -108,12 +108,12 @@
 
   /* Keep-specific colors */
   --keep-header: 0 0% 100%;
-  --keep-header-foreground: 0 0% 38%;
+  --keep-header-foreground: 0 0% 10%;
   --keep-search: 213.333, 43%, 96%;
   --keep-sidebar: 0 0% 100%;
   --keep-sidebar-hover: 213.333, 43%, 96%;
   --keep-sidebar-active: 43 100% 88%;
-  --keep-icon: 0 0% 38%;
+  --keep-icon: 0 0% 25%;
   --keep-toolbar: 0 0% 38%;
 
   /* Note card colors */
