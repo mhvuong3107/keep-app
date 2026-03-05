@@ -1,5 +1,4 @@
 
-
 export default function NoteInput() {
   return (
     <header className="bg-blue-600 text-white p-4 w-3xs">
