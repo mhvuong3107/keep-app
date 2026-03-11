@@ -171,6 +171,12 @@
     font-family: 'Roboto', 'Google Sans', sans-serif;
   }
 }
+@utility keep-noteInput-shadow {
+  box-shadow: 
+    0 4px 5px 0 rgba(0, 0, 0, .14),
+    0 1px 10px 0 rgba(0, 0, 0, .12),
+    0 2px 4px -1px rgba(0, 0, 0, .2);
+}
 
 @utility keep-shadow {
   box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 2px 6px 2px rgba(60, 64, 67, 0.15);
@@ -183,3 +189,39 @@
 @utility keep-border {
   border: 1px solid hsl(var(--border));
 }
+
+.note-content h1 {
+  @apply text-2xl font-bold;
+}
+
+.note-content h2 {
+  @apply text-xl font-semibold;
+}
+  /* Rich text heading styles for Tiptap and note display */
+  .tiptap-editor .tiptap h1,
+  .note-content h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 2rem;
+  }
+  .tiptap-editor .tiptap h2,
+  .note-content h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.75rem;
+  }
+  .tiptap-editor .tiptap {
+    outline: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .tiptap-editor .tiptap p {
+    margin: 0;
+  }
+  .tiptap-editor .tiptap p.is-editor-empty:first-child::before {
+    content: "Ghi chú...";
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+    float: left;
+    height: 0;
+  }

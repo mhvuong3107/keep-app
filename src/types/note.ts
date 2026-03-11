@@ -4,5 +4,6 @@ export interface Note {
   content: string;
   color: string;
   pinned: boolean;
+  deleted?: boolean;
   archived: boolean;
 }
