@@ -36,7 +36,8 @@ export const useNotes = () => {
     }, 0);
     return () => clearTimeout(timer);
   },[])
-  
+  const getDeletedNotes = () => notes.filter((n) => n.deleted);
+
   const addNote = (title: string, content: string, options?: { color?: string; pinned?: boolean; archived?: boolean }) => {
     const newNote: Note = {
       id: Date.now().toString(),
@@ -60,7 +61,9 @@ export const useNotes = () => {
   const permanentDelete = (id: string) => {
     updateNotes(notes.filter((n) => n.id !== id));
   };
-
+  const clearDeletedNotes = () => {
+    updateNotes(notes.filter((n) => !n.deleted));
+  }
   const restoreNote = (id: string) => {
     updateNotes(notes.map((n) => (n.id === id ? { ...n, deleted: false, archived: false } : n)));
   };
@@ -102,10 +105,12 @@ const archiveNote = (id: string) => {
     activeNotes,
     archivedNotes,
     deletedNotes,
+    getDeletedNotes,
     addNote,
     pinNote,
     deleteNote,
     permanentDelete,
+    clearDeletedNotes,
     restoreNote,
     archiveNote,
     changeColor,

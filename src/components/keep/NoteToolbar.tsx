@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Palette, Bell, UserPlus, Image as ImageIcon, Archive,
   MoreVertical, Undo2, Redo2, Baseline, Tag, Copy,
@@ -39,9 +40,13 @@ const NoteToolbar = ({
   onArchive, onToggleChecklist, onUndo, onRedo, onClose, onDelete,
   dropdownDirection = "down",
 }: NoteToolbarProps) => {
-  const dropdownPos = dropdownDirection === "up"
-    ? "absolute bottom-full left-0 mb-1"
-    : "absolute top-full left-0 mt-1";
+  const dropdownPos = React.useMemo(
+    () =>
+      dropdownDirection === "up"
+        ? "absolute bottom-full left-0 mb-1"
+        : "absolute top-full left-0 mt-1",
+    [dropdownDirection]
+  );
 
   return (
     <div className="flex items-center justify-between px-2 py-1.5">
@@ -70,9 +75,8 @@ const NoteToolbar = ({
                 <button
                   key={c.value}
                   onClick={() => onColorSelect(c.value)}
-                  className={`w-7 h-7 rounded-full border-2 transition-all ${
-                    currentColor === c.value ? "border-primary scale-110" : "border-transparent hover:border-keep-icon"
-                  } ${c.class}`}
+                  className={`w-7 h-7 rounded-full border-2 transition-all ${currentColor === c.value ? "border-primary scale-110" : "border-transparent hover:border-keep-icon"
+                    } ${c.class}`}
                   title={c.name}
                 />
               ))}
@@ -121,14 +125,14 @@ const NoteToolbar = ({
                 {isChecklist ? "Ẩn hộp kiểm" : "Hiện hộp kiểm"}
               </button>
               <button
-                onClick={() => {}}
+                onClick={() => { }}
                 className="flex items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
               >
                 <Tag className="w-4 h-4" />
                 Thêm nhãn
               </button>
               <button
-                onClick={() => {}}
+                onClick={() => { }}
                 className="flex items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
               >
                 <Copy className="w-4 h-4" />
@@ -146,7 +150,6 @@ const NoteToolbar = ({
           <Redo2 className="w-4 h-4 text-keep-toolbar" />
         </button>
       </div>
-
       <button
         onClick={onClose}
         className="px-6 py-1.5 text-sm font-medium text-foreground hover:bg-secondary/50 rounded transition-colors"
@@ -157,4 +160,4 @@ const NoteToolbar = ({
   );
 };
 
-export default NoteToolbar;
+export default React.memo(NoteToolbar);

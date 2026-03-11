@@ -1,8 +1,10 @@
+import React, { useEffect, useMemo } from "react";
 import { GripVertical, X } from "lucide-react";
 import { EditorContent, type Editor } from "@tiptap/react";
 import type { ChecklistItem } from "@/hooks/useNoteEditor";
 
 interface NoteEditorContentProps {
+  editable?: boolean;
   isChecklist: boolean;
   checklistItems: ChecklistItem[];
   showCompleted: boolean;
@@ -17,14 +19,30 @@ interface NoteEditorContentProps {
 }
 
 const NoteEditorContent = ({
+  editable = true,
   isChecklist, checklistItems, showCompleted, editor,
   onToggleChecklistItem, onUpdateChecklistItem,
   onChecklistKeyDown, onRemoveChecklistItem, onAddChecklistItem,
   onSetShowCompleted, minHeight = "24px",
 }: NoteEditorContentProps) => {
-  const uncheckedItems = checklistItems.map((item, i) => ({ ...item, originalIndex: i })).filter(item => !item.checked);
-  const checkedItems = checklistItems.map((item, i) => ({ ...item, originalIndex: i })).filter(item => item.checked);
+  const uncheckedItems = useMemo(
+    () => checklistItems
+      .map((item, i) => ({ ...item, originalIndex: i }))
+      .filter(item => !item.checked),
+    [checklistItems]
+  );
+  const checkedItems = useMemo(
+    () => checklistItems
+      .map((item, i) => ({ ...item, originalIndex: i }))
+      .filter(item => item.checked),
+    [checklistItems]
+  );
 
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(editable);
+    }
+  }, [editor, editable]);
   if (isChecklist) {
     return (
       <div className="px-2 space-y-0.5">
@@ -107,4 +125,4 @@ const NoteEditorContent = ({
   );
 };
 
-export default NoteEditorContent;
+export default React.memo(NoteEditorContent);

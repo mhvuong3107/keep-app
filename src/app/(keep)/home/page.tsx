@@ -98,6 +98,8 @@ const Index = () => {
           onPin={pinNote}
           onColorChange={changeColor}
           sourceRect={sourceRect}
+          onRestore={() => { }}
+          onPermanentDelete={() => { }}
         />
       )}
     </>

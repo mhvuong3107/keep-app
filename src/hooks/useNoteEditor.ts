@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -71,8 +71,8 @@ export function useNoteEditor({ initialTitle = "", initialContent = "", containe
     editor?.commands.redo();
   }, [editor]);
 
-  const canUndo = editor?.can().undo() ?? false;
-  const canRedo = editor?.can().redo() ?? false;
+  const canUndo = useMemo(() => editor?.can().undo() ?? false, [editor]);
+  const canRedo = useMemo(() => editor?.can().redo() ?? false, [editor]);
 
   // Outside click -> Close dropdowns
   useEffect(() => {
