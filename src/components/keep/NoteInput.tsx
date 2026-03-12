@@ -133,9 +133,10 @@ const NoteInput = ({ onAddNote }: NoteInputProps) => {
           showColors={editor.showColors}
           showMore={editor.showMore}
           isChecklist={editor.isChecklist}
+          archived={true}
           currentColor={color}
-            canUndo={editor.canUndo}
-            canRedo={editor.canRedo}
+          canUndo={editor.canUndo}
+          canRedo={editor.canRedo}
           colorRef={editor.colorRef as React.RefObject<HTMLDivElement>}
           moreRef={editor.moreRef as React.RefObject<HTMLDivElement>}
           onToggleFormatting={() => { editor.setShowFormatting(!editor.showFormatting); editor.setShowColors(false); editor.setShowMore(false); }}

@@ -64,7 +64,10 @@ const NoteCard = ({ note, onPin, onDelete, onColorChange, onArchive, onRestore, 
       {/* Pin button */}
       <button
         hidden={note.deleted}
-        onClick={(e) => { e.stopPropagation(); onPin(note.id); }}
+        onClick={(e) => {
+        e.stopPropagation();
+        onPin(note.id);
+        }}
         className={`absolute top-2 right-2 p-2 rounded-full transition-opacity ${note.pinned
           ? "opacity-100"
           : "opacity-0 group-hover:opacity-100"
@@ -84,7 +87,7 @@ const NoteCard = ({ note, onPin, onDelete, onColorChange, onArchive, onRestore, 
           </h3>
         )}
         <div
-          className="text-sm text-foreground/80 leading-relaxed note-content"
+          className="text-sm text-foreground/80 line-clamp-8 leading-relaxed note-content"
           dangerouslySetInnerHTML={{ __html: note.content }}
         />
       </div>
@@ -178,7 +181,7 @@ const NoteCard = ({ note, onPin, onDelete, onColorChange, onArchive, onRestore, 
                 onArchive?.(note.id)
               }}
               className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
-              title="Lưu trữ"
+              title={note.archived ? "Bỏ lưu trữ" : "Lưu trữ"}
             >
               <Archive className="w-4 h-4 text-keep-toolbar" />
             </button>

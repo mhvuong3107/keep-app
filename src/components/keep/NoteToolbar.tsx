@@ -5,6 +5,7 @@ import {
   CheckSquare, Trash2,
 } from "lucide-react";
 import { noteColors } from "./noteColors";
+import { arch } from "os";
 
 interface NoteToolbarProps {
   // State
@@ -15,6 +16,7 @@ interface NoteToolbarProps {
   currentColor: string;
   canUndo: boolean;
   canRedo: boolean;
+  archived: boolean;
   // Refs
   colorRef: React.RefObject<HTMLDivElement>;
   moreRef: React.RefObject<HTMLDivElement>;
@@ -35,7 +37,7 @@ interface NoteToolbarProps {
 
 const NoteToolbar = ({
   showFormatting, showColors, showMore, isChecklist, currentColor,
-  canUndo, canRedo, colorRef, moreRef,
+  canUndo, canRedo, colorRef, moreRef, archived,
   onToggleFormatting, onToggleColors, onToggleMore, onColorSelect,
   onArchive, onToggleChecklist, onUndo, onRedo, onClose, onDelete,
   dropdownDirection = "down",
@@ -47,7 +49,7 @@ const NoteToolbar = ({
         : "absolute top-full left-0 mt-1",
     [dropdownDirection]
   );
-
+  {console.log(archived)}
   return (
     <div className="flex items-center justify-between px-2 py-1.5">
       <div className="flex items-center gap-0.5 flex-wrap">
@@ -83,7 +85,7 @@ const NoteToolbar = ({
             </div>
           )}
         </div>
-
+        
         <button className="p-2 rounded-full hover:bg-secondary/50 transition-colors" title="Nhắc tôi">
           <Bell className="w-4 h-4 text-keep-toolbar" />
         </button>
@@ -93,7 +95,7 @@ const NoteToolbar = ({
         <button className="p-2 rounded-full hover:bg-secondary/50 transition-colors" title="Thêm hình ảnh">
           <ImageIcon className="w-4 h-4 text-keep-toolbar" />
         </button>
-        <button onClick={onArchive} className="p-2 rounded-full hover:bg-secondary/50 transition-colors" title="Lưu trữ">
+        <button onClick={onArchive} className={"p-2 rounded-full hover:bg-secondary/50 transition-colors"} title={archived ==  false? "Lưu trữ" : "Bỏ lưu trữ"}>
           <Archive className="w-4 h-4 text-keep-toolbar" />
         </button>
 

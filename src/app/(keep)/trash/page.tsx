@@ -7,8 +7,8 @@ import NoteEditDialog from "@/components/keep/NoteEditDialog";
 import { Trash2 } from "lucide-react";
 
 export default function Trash() {
-    const { getDeletedNotes, restoreNote, permanentDelete, clearDeletedNotes } = useNotes();
-    const [deletedNotes, setDeletedNotes] = useState<Note[]>([]);
+    const { restoreNote, permanentDelete, deletedNotes, clearDeletedNotes } = useNotes();
+
     const [viewingNote, setViewingNote] = useState<Note | null>(null);
     const [sourceRect, setSourceRect] = useState<DOMRect | null>(null);
 
@@ -17,16 +17,7 @@ export default function Trash() {
         setViewingNote(note);
     };
 
-    const refreshDeletedNotes = () => {
-        setDeletedNotes(getDeletedNotes());
-    };
 
-    useEffect(() => {
-        setTimeout(() => {
-            refreshDeletedNotes();
-        }, 0);
-    }, [getDeletedNotes]);
-    
     return (
         <div className="p-4 flex flex-col items-center min-h-screen">
             <div className="italic text-lg text-muted-foreground mb-6">
@@ -52,11 +43,11 @@ export default function Trash() {
                                 onArchive={() => { }}
                                 onRestore={() => {
                                     restoreNote(note.id);
-                                    refreshDeletedNotes();
+                                    
                                 }}
                                 onPermanentDelete={() => {
                                     permanentDelete(note.id);
-                                    refreshDeletedNotes();
+                                  
                                 }}
                                 onClick={(rect) => handleNoteClick(note, rect)}
                             />
@@ -72,7 +63,6 @@ export default function Trash() {
                     onUpdate={() => { }}
                     onDelete={() => {
                         permanentDelete(viewingNote.id);
-                        refreshDeletedNotes();
                         setViewingNote(null);
                     }}
                     onArchive={() => { }}
@@ -81,11 +71,9 @@ export default function Trash() {
                     sourceRect={sourceRect}
                     onRestore={() => {
                         restoreNote(viewingNote.id);
-                        refreshDeletedNotes();
                     }}
                     onPermanentDelete={() => {
                         permanentDelete(viewingNote.id);
-                        refreshDeletedNotes();
                     }}
                 />
             )}

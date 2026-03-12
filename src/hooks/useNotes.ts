@@ -19,8 +19,10 @@ const loadNotes = (): Note[] => {
 const saveNotes = (notes: Note[]) => {
   try {
     localStorage.setItem(LocalStorageKey, JSON.stringify(notes));
+
+    window.dispatchEvent(new Event("notesUpdated"));
   } catch (error) {
-    console.error("Error saving notes to localStorage:", error);
+    console.error("Error saving notes:", error);
   }
 };
 
@@ -30,13 +32,20 @@ export const useNotes = () => {
   setNotes(updated);
   saveNotes(updated);
 };
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setNotes(loadNotes)
-    }, 0);
-    return () => clearTimeout(timer);
-  },[])
+useEffect(() => {
+  setNotes(loadNotes());
+  //eslint-disable-next-line react-hooks/exhaustive-deps
+  const syncNotes = () => {
+    setNotes(loadNotes());
+  };
+  window.addEventListener("notesUpdated", syncNotes);
+
+  return () => {
+    window.removeEventListener("notesUpdated", syncNotes);
+  };
+}, []);
   const getDeletedNotes = () => notes.filter((n) => n.deleted);
+
 
   const addNote = (title: string, content: string, options?: { color?: string; pinned?: boolean; archived?: boolean }) => {
     const newNote: Note = {
@@ -51,7 +60,12 @@ export const useNotes = () => {
   };
 
   const pinNote = (id: string) => {
-    updateNotes(notes.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n)))
+    updateNotes(notes.map((n) => (n.id === id ? {
+            ...n,
+            pinned: !n.pinned,
+            archived: false,
+          }
+        : n)))
   };
 
   const deleteNote = (id: string) => {

@@ -155,6 +155,7 @@ const NoteEditDialog = ({
               showMore={editor.showMore}
               isChecklist={editor.isChecklist}
               currentColor={note.color}
+              archived={note.archived}
               canUndo={editor.canUndo}
               canRedo={editor.canRedo}
               colorRef={editor.colorRef as React.RefObject<HTMLDivElement>}
