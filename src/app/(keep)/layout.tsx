@@ -10,9 +10,9 @@ export default function KeepLayout({
 }) {
     const [sidebarExpanded, setSidebarExpanded] = useState(true);
     return (
-        <div className="min-h-screen bg-background flex flex-col">
+        <div className="min-h-screen bg-background">
             <KeepHeader onToggleSidebar={() => setSidebarExpanded(!sidebarExpanded)} />
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex">
                 <KeepSidebar expanded={sidebarExpanded} />
                 <main className="flex-1 p-4 sm:p-8 transition-all duration-200">
                   {children}
