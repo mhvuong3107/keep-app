@@ -33,7 +33,7 @@ const Index = () => {
       activationConstraint: { distance: 8 },
     })
   );
-  
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -89,6 +89,7 @@ const Index = () => {
 
       {currentEditNote && (
         <NoteEditDialog
+          key={currentEditNote.id}
           note={currentEditNote}
           open={!!currentEditNote}
           onClose={() => { setEditingNote(null); setSourceRect(null); }}

@@ -5,6 +5,7 @@ import { useNotes } from "@/hooks/useNotes";
 import NoteCard from "@/components/keep/NoteCard";
 import NoteEditDialog from "@/components/keep/NoteEditDialog";
 import { ArchiveIcon } from "lucide-react";
+
 export default function Archive() {
     const { archivedNotes,updateNote,deleteNote,archiveNote, pinNote,changeColor} = useNotes();
     const [currentEditNote, setEditingNote] = useState<Note | null>(null);

@@ -4,8 +4,8 @@ import {
   MoreVertical, Undo2, Redo2, Baseline, Tag, Copy,
   CheckSquare, Trash2,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { noteColors } from "./noteColors";
-import { arch } from "os";
 
 interface NoteToolbarProps {
   // State
@@ -20,6 +20,8 @@ interface NoteToolbarProps {
   // Refs
   colorRef: React.RefObject<HTMLDivElement>;
   moreRef: React.RefObject<HTMLDivElement>;
+  // Label popover content — cha tự cung cấp, toolbar không cần biết nguồn dữ liệu
+  labelPopoverContent?: React.ReactNode;
   // Callbacks
   onToggleFormatting: () => void;
   onToggleColors: () => void;
@@ -31,6 +33,7 @@ interface NoteToolbarProps {
   onRedo: () => void;
   onClose: () => void;
   onDelete?: () => void;
+  onLabelPopoverOpenChange?: (open: boolean) => void;
   // Dropdown direction
   dropdownDirection?: "up" | "down";
 }
@@ -38,18 +41,15 @@ interface NoteToolbarProps {
 const NoteToolbar = ({
   showFormatting, showColors, showMore, isChecklist, currentColor,
   canUndo, canRedo, colorRef, moreRef, archived,
+  labelPopoverContent,
   onToggleFormatting, onToggleColors, onToggleMore, onColorSelect,
   onArchive, onToggleChecklist, onUndo, onRedo, onClose, onDelete,
-  dropdownDirection = "down",
+  onLabelPopoverOpenChange,
 }: NoteToolbarProps) => {
-  const dropdownPos = React.useMemo(
-    () =>
-      dropdownDirection === "up"
-        ? "absolute bottom-full left-0 mb-1"
-        : "absolute top-full left-0 mt-1",
-    [dropdownDirection]
-  );
-  {console.log(archived)}
+
+
+  const [showLabels, setShowLabels] = React.useState(false);
+
   return (
     <div className="flex items-center justify-between px-2 py-1.5">
       <div className="flex items-center gap-0.5 flex-wrap">
@@ -72,7 +72,7 @@ const NoteToolbar = ({
             <Palette className="w-4 h-4 text-keep-toolbar" />
           </button>
           {showColors && (
-            <div className={`${dropdownPos} p-2 bg-card rounded-lg keep-shadow z-20 flex gap-1 flex-wrap w-[180px] animate-in fade-in zoom-in-95`}>
+            <div className={`absolute top-full left-0 p-2 bg-card rounded-lg keep-shadow z-20 flex gap-1 flex-wrap w-[180px] animate-in fade-in zoom-in-95`}>
               {noteColors.map((c) => (
                 <button
                   key={c.value}
@@ -85,7 +85,7 @@ const NoteToolbar = ({
             </div>
           )}
         </div>
-        
+
         <button className="p-2 rounded-full hover:bg-secondary/50 transition-colors" title="Nhắc tôi">
           <Bell className="w-4 h-4 text-keep-toolbar" />
         </button>
@@ -95,7 +95,27 @@ const NoteToolbar = ({
         <button className="p-2 rounded-full hover:bg-secondary/50 transition-colors" title="Thêm hình ảnh">
           <ImageIcon className="w-4 h-4 text-keep-toolbar" />
         </button>
-        <button onClick={onArchive} className={"p-2 rounded-full hover:bg-secondary/50 transition-colors"} title={archived ==  false? "Lưu trữ" : "Bỏ lưu trữ"}>
+
+        {/* Label popover — render nội dung do cha truyền vào */}
+        <Popover open={showLabels} onOpenChange={(open) => { setShowLabels(open); onLabelPopoverOpenChange?.(open); }}>
+          <PopoverTrigger asChild>
+            <button
+              className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
+              title="Nhãn"
+            >
+              <Tag className="w-4 h-4 text-keep-toolbar" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="!w-72">
+            {labelPopoverContent}
+          </PopoverContent>
+        </Popover>
+
+        <button
+          onClick={onArchive}
+          className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
+          title={archived ? "Bỏ lưu trữ" : "Lưu trữ"}
+        >
           <Archive className="w-4 h-4 text-keep-toolbar" />
         </button>
 
@@ -109,13 +129,12 @@ const NoteToolbar = ({
             <MoreVertical className="w-4 h-4 text-keep-toolbar" />
           </button>
           {showMore && (
-            <div className={`${dropdownPos} bg-card rounded-lg keep-shadow z-20 py-1 min-w-[180px] animate-in fade-in zoom-in-95`}>
+            <div className={`absolute top-full left-0 bg-card rounded-lg keep-shadow z-20 py-1 min-w-[180px] animate-in fade-in zoom-in-95`}>
               {onDelete && (
                 <button
                   onClick={onDelete}
                   className="flex items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" />
                   Xoá ghi chú
                 </button>
               )}
@@ -123,21 +142,12 @@ const NoteToolbar = ({
                 onClick={onToggleChecklist}
                 className="flex items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
               >
-                <CheckSquare className="w-4 h-4" />
                 {isChecklist ? "Ẩn hộp kiểm" : "Hiện hộp kiểm"}
               </button>
               <button
                 onClick={() => { }}
                 className="flex items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
               >
-                <Tag className="w-4 h-4" />
-                Thêm nhãn
-              </button>
-              <button
-                onClick={() => { }}
-                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
-              >
-                <Copy className="w-4 h-4" />
                 Tạo bản sao
               </button>
             </div>
@@ -145,10 +155,20 @@ const NoteToolbar = ({
         </div>
 
         {/* Undo / Redo */}
-        <button onClick={onUndo} disabled={!canUndo} className="p-2 rounded-full hover:bg-secondary/50 transition-colors disabled:opacity-30" title="Hoàn tác">
+        <button
+          onClick={onUndo}
+          disabled={!canUndo}
+          className="p-2 rounded-full hover:bg-secondary/50 transition-colors disabled:opacity-30"
+          title="Hoàn tác"
+        >
           <Undo2 className="w-4 h-4 text-keep-toolbar" />
         </button>
-        <button onClick={onRedo} disabled={!canRedo} className="p-2 rounded-full hover:bg-secondary/50 transition-colors disabled:opacity-30" title="Làm lại">
+        <button
+          onClick={onRedo}
+          disabled={!canRedo}
+          className="p-2 rounded-full hover:bg-secondary/50 transition-colors disabled:opacity-30"
+          title="Làm lại"
+        >
           <Redo2 className="w-4 h-4 text-keep-toolbar" />
         </button>
       </div>

@@ -17,7 +17,6 @@ export default function Trash() {
         setViewingNote(note);
     };
 
-
     return (
         <div className="p-4 flex flex-col items-center min-h-screen">
             <div className="italic text-lg text-muted-foreground mb-6">

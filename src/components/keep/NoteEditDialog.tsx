@@ -6,7 +6,10 @@ import { useNoteEditor } from "@/hooks/useNoteEditor";
 import NoteEditorContent from "./NoteEditorContent";
 import NoteFormattingToolbar from "./NoteFormattingToolbar";
 import NoteToolbar from "./NoteToolbar";
-import { Trash2,RotateCw } from "lucide-react";
+import NoteLabelSelector from "./NoteLabelSelector";
+import { Trash2, RotateCw } from "lucide-react";
+import { useNotes } from "@/hooks/useNotes";
+import { useLabels } from "@/hooks/useLabel";
 
 interface NoteEditDialogProps {
   note: Note;
@@ -23,35 +26,56 @@ interface NoteEditDialogProps {
 }
 
 const NoteEditDialog = ({
-  note, open, onClose, onUpdate, onDelete, onArchive, onPin, onColorChange, onRestore, onPermanentDelete, sourceRect
+  note, open, onClose, onUpdate, onDelete, onArchive, onPin,
+  onColorChange, onRestore, onPermanentDelete, sourceRect
 }: NoteEditDialogProps) => {
-  const [phase, setPhase] = useState<'start' | 'animate' | 'done'>('start');
+  const [phase, setPhase] = useState<"start" | "animate" | "done">("start");
   const dialogRef = useRef<HTMLDivElement>(null);
   const isDeleted = note.deleted;
-
+  const { removeLabel } = useNotes();
+  const { labels: allLabels } = useLabels();
+  const [showLabelPopover, setShowLabelPopover] = useState(false);
   const editor = useNoteEditor({
     initialTitle: note.title,
     initialContent: note.content,
     containerRef: dialogRef as React.RefObject<HTMLElement>,
   });
 
-  // Sync state when note changes
+  const prevOpenRef = useRef(false);
+  const prevNoteIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (open) {
+    const opened = open && !prevOpenRef.current;
+    const switchedNote = open && note.id !== prevNoteIdRef.current;
+
+    if (opened || switchedNote) {
       editor.initFromContent(note.title, note.content);
       requestAnimationFrame(() => {
-        setPhase('start');
-        requestAnimationFrame(() => setPhase('animate'));
+        setPhase("start");
+        requestAnimationFrame(() => setPhase("animate"));
       });
-      const timer = setTimeout(() => setPhase('done'), 250);
+      const timer = setTimeout(() => setPhase("done"), 250);
+
+      prevOpenRef.current = open;
+      if (open) {
+        prevNoteIdRef.current = note.id;
+      }
+
       return () => clearTimeout(timer);
     }
-  }, [note, open]);
+
+    prevOpenRef.current = open;
+    if (open) {
+      prevNoteIdRef.current = note.id;
+    }
+  }, [note.id, open, note.title, note.content, editor]);
 
   const handleSaveAndClose = () => {
     if (!note.deleted) {
-      const finalContent = editor.getContent();
-      onUpdate(note.id, { title: editor.title, content: finalContent });
+      onUpdate(note.id, {
+        title: editor.title,
+        content: editor.getContent(),
+      });
     }
     onClose();
   };
@@ -63,29 +87,28 @@ const NoteEditDialog = ({
   if (!open) return null;
 
   const colorClass = getColorClass(note.color);
+  const isAnimating = phase === "start";
 
   const getDialogStyle = (): React.CSSProperties => {
-    if (phase === 'start' && sourceRect) {
+    if (phase === "start" && sourceRect) {
       return {
-        position: 'fixed',
+        position: "fixed",
         top: sourceRect.top,
         left: sourceRect.left,
         width: sourceRect.width,
         height: sourceRect.height,
         maxWidth: sourceRect.width,
         maxHeight: sourceRect.height,
-        transition: 'none',
-        overflow: 'hidden',
+        transition: "none",
+        overflow: "hidden",
       };
     }
     return {};
   };
 
-  const isAnimating = phase === 'start';
-
   return (
     <div
-      className={`fixed inset-0 z-50 transition-colors duration-200 ${isAnimating ? 'bg-black/0' : 'bg-black/50'}`}
+      className={`fixed inset-0 z-50 transition-colors duration-200 ${isAnimating ? "bg-black/0" : "bg-black/50"}`}
       onClick={handleOverlayClick}
       aria-modal="true"
       role="dialog"
@@ -93,7 +116,7 @@ const NoteEditDialog = ({
       <div className="flex items-center justify-center min-h-full p-4">
         <div
           ref={dialogRef}
-          className={`w-full max-w-[600px] rounded-lg keep-shadow relative ${colorClass} flex flex-col transition-all duration-200 ease-out ${isAnimating ? 'overflow-hidden' : 'max-h-[80vh]'}`}
+          className={`w-full max-w-[600px] rounded-lg keep-shadow relative ${colorClass} flex flex-col transition-all duration-200 ease-out ${isAnimating ? "overflow-hidden" : "max-h-[80vh]"}`}
           style={getDialogStyle()}
           onClick={(e) => e.stopPropagation()}
         >
@@ -112,16 +135,14 @@ const NoteEditDialog = ({
             type="text"
             placeholder="Tiêu đề"
             value={editor.title}
-            onChange={(e) => {
-              if (!isDeleted) editor.handleTitleChange(e.target.value);
-            }}
+            onChange={(e) => { if (!isDeleted) editor.handleTitleChange(e.target.value); }}
             disabled={isDeleted}
             className="w-full px-4 pt-3 pb-1 bg-transparent outline-none text-foreground font-medium placeholder:text-muted-foreground pr-12 text-base"
             autoFocus
           />
 
-          {/* Content */}
-          <div className="py-1 overflow-y-auto flex-1 min-h-0">
+          {/* Content + label badges */}
+          <div className= "py-1  overflow-y-auto flex-1 min-h-0">
             <NoteEditorContent
               editable={!isDeleted}
               isChecklist={editor.isChecklist}
@@ -135,6 +156,9 @@ const NoteEditDialog = ({
               onAddChecklistItem={() => editor.setChecklistItems([...editor.checklistItems, { text: "", checked: false }])}
               onSetShowCompleted={editor.setShowCompleted}
               minHeight="60px"
+              labelIds={note.labelIds ?? []}
+              allLabels={allLabels}
+              onRemoveLabel={(labelId) => removeLabel(note.id, labelId)}
             />
           </div>
 
@@ -150,6 +174,12 @@ const NoteEditDialog = ({
           {/* Main toolbar */}
           {!isDeleted ? (
             <NoteToolbar
+              labelPopoverContent={
+                <NoteLabelSelector
+                  noteId={note.id}
+                  labelIds={note.labelIds ?? []}
+                />
+              }
               showFormatting={editor.showFormatting}
               showColors={editor.showColors}
               showMore={editor.showMore}
@@ -170,45 +200,34 @@ const NoteEditDialog = ({
               onRedo={editor.redo}
               onClose={handleSaveAndClose}
               onDelete={() => { onDelete(note.id); onClose(); }}
+              onLabelPopoverOpenChange={setShowLabelPopover}
               dropdownDirection="up"
             />
           ) : (
-
-            <div
-            className="flex justify-between items-center gap-0.5 px-1.5 py-1 opacity-100 transition-opacity"
-            >
-            {/* Restore */}
-            <div>
-               <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onRestore?.(note.id)
-              }}
-              className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
-              title="Khôi phục"
-            >
-              <RotateCw className="w-4 h-4 text-keep-toolbar" />
-            </button>
-            {/* Permanent delete */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onPermanentDelete?.(note.id);
-              }}
-              className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
-              title="Xoá vĩnh viễn"
-            >
-              <Trash2 className="w-4 h-4 text-keep-toolbar" />
-            </button>
+            <div className="flex justify-between items-center gap-0.5 px-1.5 py-1 opacity-100 transition-opacity">
+              <div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onRestore?.(note.id); }}
+                  className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
+                  title="Khôi phục"
+                >
+                  <RotateCw className="w-4 h-4 text-keep-toolbar" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onPermanentDelete?.(note.id); }}
+                  className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
+                  title="Xoá vĩnh viễn"
+                >
+                  <Trash2 className="w-4 h-4 text-keep-toolbar" />
+                </button>
+              </div>
+              <button
+                onClick={onClose}
+                className="px-6 py-1.5 text-sm font-medium text-foreground hover:bg-secondary/50 rounded transition-colors"
+              >
+                Đóng
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="px-6 py-1.5 text-sm font-medium text-foreground hover:bg-secondary/50 rounded transition-colors"
-            >
-              Đóng
-            </button>
-          </div>
-
           )}
         </div>
       </div>

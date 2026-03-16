@@ -3,6 +3,7 @@ export interface Note {
   title: string;
   content: string;
   color: string;
+  labelIds?: string[];
   pinned: boolean;
   deleted?: boolean;
   archived: boolean;
