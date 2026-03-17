@@ -1,7 +1,7 @@
 "use client";
 import { Note } from "@/types/note";
 import { useState } from "react";
-import { useNotes } from "@/hooks/useNotes";
+import { useNotesContext } from "@/context/NotesContext";
 import NoteCard from "@/components/keep/NoteCard";
 import NoteEditDialog from "@/components/keep/NoteEditDialog";
 import NoteInput from "@/components/keep/NoteInput";
@@ -17,6 +17,7 @@ export default function LabelPage() {
 
     const {
         notes,
+        filteredNotes,
         addNote,
         pinNote,
         deleteNote,
@@ -25,11 +26,11 @@ export default function LabelPage() {
         changeColor,
         updateNote,
         permanentDelete,
-    } = useNotes();
+    } = useNotesContext();
 
     const resolvedLabelId = label?.id;
     const labeledNotes = resolvedLabelId
-        ? notes.filter((n) => n.labelIds?.includes(resolvedLabelId))
+        ? filteredNotes.filter((n) => n.labelIds?.includes(resolvedLabelId))
         : [];
     const activeLabeledNotes = labeledNotes.filter((n) => !n.archived && !n.deleted);
     const pinnedLabeledNotes = activeLabeledNotes.filter((n) => n.pinned);
@@ -95,24 +96,24 @@ export default function LabelPage() {
             )}
 
             {otherLabeledNotes.length > 0 && (
-               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
-                    Khác
-                </p>
-                <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4">
-                    {otherLabeledNotes.map((note) => (
-                        <NoteCard
-                            key={note.id}
-                            note={note}
-                            onClick={(rect) => handleNoteClick(note, rect)}
-                            onPin={pinNote}
-                            onDelete={deleteNote}
-                            onColorChange={changeColor}
-                            onArchive={archiveNote}
-                        />
-                    ))}
+                <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
+                        Khác
+                    </p>
+                    <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4">
+                        {otherLabeledNotes.map((note) => (
+                            <NoteCard
+                                key={note.id}
+                                note={note}
+                                onClick={(rect) => handleNoteClick(note, rect)}
+                                onPin={pinNote}
+                                onDelete={deleteNote}
+                                onColorChange={changeColor}
+                                onArchive={archiveNote}
+                            />
+                        ))}
+                    </div>
                 </div>
-               </div>
             )}
 
             {archivedLabeledNotes.length > 0 && (

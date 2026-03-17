@@ -17,7 +17,7 @@ interface NoteInputProps {
   labelIds?: string[]
 }
 
-const NoteInput = ({ onAddNote,labelIds }: NoteInputProps) => {
+const NoteInput = ({ onAddNote, labelIds }: NoteInputProps) => {
   const [expanded, setExpanded] = useState(false);
   const [color, setColor] = useState("default");
   const [pinned, setPinned] = useState(false);
@@ -34,7 +34,7 @@ const NoteInput = ({ onAddNote,labelIds }: NoteInputProps) => {
     editor.resetEditor();
     setColor("default");
     setPinned(false);
-    setLocalLabelIds([]);
+    if(!labelIds) setLocalLabelIds([]);
     setShowLabelPopover(false);
     setExpanded(false);
   };
@@ -86,7 +86,7 @@ const NoteInput = ({ onAddNote,labelIds }: NoteInputProps) => {
               onClick={(e) => {
                 e.stopPropagation();
                 setExpanded(true);
-                editor.setChecklistItems([{ text: "", checked: false }]);
+                editor.setChecklistItems([{ id: crypto.randomUUID(), text: "", checked: false }]);
               }}
             >
               <CheckSquare className="w-5 h-5 text-keep-icon" />
@@ -137,9 +137,10 @@ const NoteInput = ({ onAddNote,labelIds }: NoteInputProps) => {
             onChecklistKeyDown={editor.handleChecklistKeyDown}
             onRemoveChecklistItem={editor.removeChecklistItem}
             onAddChecklistItem={() =>
-              editor.setChecklistItems([...editor.checklistItems, { text: "", checked: false }])
+              editor.setChecklistItems([...editor.checklistItems, { id: crypto.randomUUID(), text: "", checked: false }])
             }
             onSetShowCompleted={editor.setShowCompleted}
+            onReorderChecklist={editor.reorderCheckList}
             labelIds={localLabelIds}
             allLabels={allLabels}
             onRemoveLabel={(labelId) => setLocalLabelIds(prev => prev.filter(id => id !== labelId))}
@@ -186,14 +187,13 @@ const NoteInput = ({ onAddNote,labelIds }: NoteInputProps) => {
             editor.setShowMore(!editor.showMore);
             editor.setShowColors(false);
           }}
-          onColorSelect={(c) => { setColor(c); editor.setShowColors(false); }}
+          onColorSelect={(c) => { setColor(c); }}
           onArchive={handleArchive}
           onToggleChecklist={() => { editor.toggleChecklist(); editor.setShowMore(false); }}
           onUndo={editor.undo}
           onRedo={editor.redo}
           onClose={handleClose}
           onLabelPopoverOpenChange={setShowLabelPopover}
-          dropdownDirection="down"
         />
       </div>
     </div>

@@ -54,7 +54,7 @@ const NoteCard = ({
 
   return (
     <div
-      className={`group relative rounded-lg keep-border hover:keep-shadow-hover transition-shadow cursor-pointer break-inside-avoid mb-4 ${getColorClass(note.color)} ${hidden ? "invisible" : ""}`}
+      className={`group relative rounded-lg keep-border hover:keep-shadow-hover transition-shadow cursor-pointer break-inside-avoid ${getColorClass(note.color)} ${hidden ? "invisible" : ""}`}
       ref={cardRef}
       onClick={() => {
         if (onClick && cardRef.current) {
@@ -137,7 +137,10 @@ const NoteCard = ({
                 {noteColors.map((c) => (
                   <button
                     key={c.value}
-                    onClick={() => { onColorChange(note.id, c.value); setShowColors(false); }}
+                    onClick={(e) => { 
+                      e.stopPropagation();
+                      onColorChange(note.id, c.value); 
+                       }}
                     className={`w-6 h-6 rounded-full border-2 ${note.color === c.value ? "border-primary" : "border-transparent hover:border-keep-icon"} ${c.class}`}
                     title={c.name}
                   />

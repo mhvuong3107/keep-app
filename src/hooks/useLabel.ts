@@ -5,6 +5,8 @@ import { loadNotes, saveNotes } from "./useNotes";
 const LabelKey = "keep_labels";
 
 export const loadLabels = (): Label[] => {
+    if (typeof window === 'undefined') return [];
+
     try {
         const stored = localStorage.getItem(LabelKey);
         if (stored) {
@@ -16,6 +18,8 @@ export const loadLabels = (): Label[] => {
     return [];
 };
 export const saveLabels = (labels: Label[]) => {
+    if (typeof window === 'undefined') return;
+
     try {
         localStorage.setItem(LabelKey, JSON.stringify(labels));
         window.dispatchEvent(new Event("labelsUpdated"));
@@ -87,34 +91,34 @@ export const useLabels = () => {
 
         return { success: true };
     };
-const mergeLabel = (sourceId: string, targetId: string) => {
-  const notes = loadNotes()
+    const mergeLabel = (sourceId: string, targetId: string) => {
+        const notes = loadNotes()
 
-  const updatedNotes = notes.map(note => {
-    if (!note.labelIds?.includes(sourceId)) return note
+        const updatedNotes = notes.map(note => {
+            if (!note.labelIds?.includes(sourceId)) return note
 
-    const ids = note.labelIds
-      .filter(id => id !== sourceId)
+            const ids = note.labelIds
+                .filter(id => id !== sourceId)
 
-    if (!ids.includes(targetId)) {
-      ids.push(targetId)
+            if (!ids.includes(targetId)) {
+                ids.push(targetId)
+            }
+
+            return {
+                ...note,
+                labelIds: ids
+            }
+        })
+
+        saveNotes(updatedNotes)
+
+        const updatedLabels = labels.filter(l => l.id !== sourceId)
+
+        setLabels(updatedLabels)
+        saveLabels(updatedLabels)
+
+        return { success: true }
     }
-
-    return {
-      ...note,
-      labelIds: ids
-    }
-  })
-
-  saveNotes(updatedNotes)
-
-  const updatedLabels = labels.filter(l => l.id !== sourceId)
-
-  setLabels(updatedLabels)
-  saveLabels(updatedLabels)
-
-  return { success: true }
-}
 
     return { labels, addLabel, removeLabel, updateLabel, mergeLabel };
 }

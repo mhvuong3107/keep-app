@@ -1,8 +1,7 @@
-import React from "react";
+import { useState, memo, useRef } from "react";
 import {
   Palette, Bell, UserPlus, Image as ImageIcon, Archive,
-  MoreVertical, Undo2, Redo2, Baseline, Tag, Copy,
-  CheckSquare, Trash2,
+  MoreVertical, Undo2, Redo2, Baseline, Tag,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { noteColors } from "./noteColors";
@@ -34,8 +33,6 @@ interface NoteToolbarProps {
   onClose: () => void;
   onDelete?: () => void;
   onLabelPopoverOpenChange?: (open: boolean) => void;
-  // Dropdown direction
-  dropdownDirection?: "up" | "down";
 }
 
 const NoteToolbar = ({
@@ -48,7 +45,44 @@ const NoteToolbar = ({
 }: NoteToolbarProps) => {
 
 
-  const [showLabels, setShowLabels] = React.useState(false);
+  const [showLabels, setShowLabels] = useState(false);
+  const [dropdownDirection, setDropdownDirection] = useState<"up" | "down">("down");
+  const [colorDirection, setColorDirection] = useState<"up" | "down">("down");
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const colorButtonRef = useRef<HTMLButtonElement>(null);
+
+  const handleToggleMore = () => {
+    if (moreButtonRef.current) {
+      const rect = moreButtonRef.current.getBoundingClientRect();
+
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      if (spaceBelow < 200 && spaceAbove > spaceBelow) {
+        setDropdownDirection("up");
+      } else {
+        setDropdownDirection("down");
+      }
+    }
+
+    onToggleMore();
+  };
+  const handleToggleColors = () => {
+    if (colorButtonRef.current) {
+      const rect = colorButtonRef.current.getBoundingClientRect();
+
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      if (spaceBelow < 200 && spaceAbove > spaceBelow) {
+        setColorDirection("up");
+      } else {
+        setColorDirection("down");
+      }
+    }
+
+    onToggleColors();
+  };
 
   return (
     <div className="flex items-center justify-between px-2 py-1.5">
@@ -65,14 +99,19 @@ const NoteToolbar = ({
         {/* Color picker */}
         <div ref={colorRef} className="relative">
           <button
-            onClick={onToggleColors}
+            ref={colorButtonRef}
+            onClick={handleToggleColors}
             className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
             title="Màu nền"
           >
             <Palette className="w-4 h-4 text-keep-toolbar" />
           </button>
           {showColors && (
-            <div className={`absolute top-full left-0 p-2 bg-card rounded-lg keep-shadow z-20 flex gap-1 flex-wrap w-[180px] animate-in fade-in zoom-in-95`}>
+            <div
+              className={`absolute left-0 p-2 bg-card rounded-lg keep-shadow z-20 flex gap-1 flex-wrap w-[180px]
+            ${colorDirection === "down" ? "top-full mt-1" : "bottom-full mb-1"}
+            animate-in fade-in zoom-in-95`}
+            >
               {noteColors.map((c) => (
                 <button
                   key={c.value}
@@ -122,14 +161,19 @@ const NoteToolbar = ({
         {/* More options */}
         <div ref={moreRef} className="relative">
           <button
-            onClick={onToggleMore}
+            ref={moreButtonRef}
+            onClick={handleToggleMore}
             className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
             title="Tuỳ chọn khác"
           >
             <MoreVertical className="w-4 h-4 text-keep-toolbar" />
           </button>
           {showMore && (
-            <div className={`absolute top-full left-0 bg-card rounded-lg keep-shadow z-20 py-1 min-w-[180px] animate-in fade-in zoom-in-95`}>
+            <div
+              className={`absolute left-0 bg-card rounded-lg keep-shadow z-20 py-1 min-w-[180px]
+            ${dropdownDirection === "down" ? "top-full mt-1" : "bottom-full mb-1"}
+            animate-in fade-in zoom-in-95`}
+            >
               {onDelete && (
                 <button
                   onClick={onDelete}
@@ -182,4 +226,4 @@ const NoteToolbar = ({
   );
 };
 
-export default React.memo(NoteToolbar);
+export default memo(NoteToolbar);

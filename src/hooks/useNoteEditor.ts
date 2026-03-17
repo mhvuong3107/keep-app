@@ -2,8 +2,9 @@ import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
-import Label from "@/types/label";
+
 export interface ChecklistItem {
+  id: string;
   text: string;
   checked: boolean;
 }
@@ -64,15 +65,15 @@ export function useNoteEditor({ initialTitle = "", initialContent = "", containe
   }, []);
 
   const undo = useCallback(() => {
-    editor?.commands.undo();
+    editor?.chain().focus().undo().run();
   }, [editor]);
 
   const redo = useCallback(() => {
-    editor?.commands.redo();
+    editor?.chain().focus().redo().run();
   }, [editor]);
 
-  const canUndo = useMemo(() => editor?.can().undo() ?? false, [editor]);
-  const canRedo = useMemo(() => editor?.can().redo() ?? false, [editor]);
+  const canUndo = editor?.can().undo() ?? false;
+  const canRedo = editor?.can().redo() ?? false;
 
   // Outside click -> Close dropdowns
   useEffect(() => {
@@ -93,7 +94,7 @@ export function useNoteEditor({ initialTitle = "", initialContent = "", containe
       // Strip HTML and split into lines
       const text = editor?.getText() || content.replace(/<[^>]*>/g, '');
       const lines = text.split("\n").filter(l => l.trim());
-      setChecklistItems(lines.length > 0 ? lines.map(l => ({ text: l, checked: false })) : [{ text: "", checked: false }]);
+      setChecklistItems(lines.length > 0 ? lines.map(l => ({ id: crypto.randomUUID(), text: l, checked: false })) : [{ id: crypto.randomUUID(), text: "", checked: false }]);
       setIsChecklist(true);
     } else {
       setContent(checklistItems.filter(i => i.text.trim()).map(i => i.text).join("\n"));
@@ -115,7 +116,7 @@ export function useNoteEditor({ initialTitle = "", initialContent = "", containe
       e.preventDefault();
       setChecklistItems(prev => {
         const newItems = [...prev];
-        newItems.splice(index + 1, 0, { text: "", checked: false });
+        newItems.splice(index + 1, 0, { id: crypto.randomUUID(), text: "", checked: false });
         return newItems;
       });
       setTimeout(() => {
@@ -203,9 +204,9 @@ export function useNoteEditor({ initialTitle = "", initialContent = "", containe
       setIsChecklist(true);
       setChecklistItems(
         lines.filter(l => l.trim()).map(l => {
-          if (l.startsWith("☑ ")) return { text: l.slice(2), checked: true };
-          if (l.startsWith("☐ ")) return { text: l.slice(2), checked: false };
-          return { text: l, checked: false };
+          if (l.startsWith("☑ ")) return { id: crypto.randomUUID(), text: l.slice(2), checked: true };
+          if (l.startsWith("☐ ")) return { id: crypto.randomUUID(), text: l.slice(2), checked: false };
+          return { id: crypto.randomUUID(), text: l, checked: false };
         })
       );
     } else {
@@ -213,6 +214,18 @@ export function useNoteEditor({ initialTitle = "", initialContent = "", containe
       setChecklistItems([]);
     }
   }, [editor]);
+
+  const reorderCheckList = useCallback((activeId: string, overId: string) => {
+    setChecklistItems(prev => {
+      const oldIndex = prev.findIndex(item => item.id === activeId);
+      const newIndex = prev.findIndex(item => item.id === overId);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      const newItems = [...prev];
+      const [moved] = newItems.splice(oldIndex, 1);
+      newItems.splice(newIndex, 0, moved);
+      return newItems;
+    });
+  }, []);
 
   return {
     // State
@@ -229,6 +242,6 @@ export function useNoteEditor({ initialTitle = "", initialContent = "", containe
     handleTitleChange, toggleChecklist,
     updateChecklistItem, toggleChecklistItem, handleChecklistKeyDown,
     removeChecklistItem, applyFormat, applyHeading,
-    undo, redo, getContent, resetEditor, initFromContent,
+    undo, redo, getContent, resetEditor, initFromContent, reorderCheckList,
   };
 }

@@ -142,7 +142,7 @@ const NoteEditDialog = ({
           />
 
           {/* Content + label badges */}
-          <div className= "py-1  overflow-y-auto flex-1 min-h-0">
+          <div className="py-1 overflow-y-auto flex-1 min-h-0 note-scroll">
             <NoteEditorContent
               editable={!isDeleted}
               isChecklist={editor.isChecklist}
@@ -153,8 +153,9 @@ const NoteEditDialog = ({
               onUpdateChecklistItem={editor.updateChecklistItem}
               onChecklistKeyDown={editor.handleChecklistKeyDown}
               onRemoveChecklistItem={editor.removeChecklistItem}
-              onAddChecklistItem={() => editor.setChecklistItems([...editor.checklistItems, { text: "", checked: false }])}
+              onAddChecklistItem={() => editor.setChecklistItems([...editor.checklistItems, { id: crypto.randomUUID(), text: "", checked: false }])}
               onSetShowCompleted={editor.setShowCompleted}
+              onReorderChecklist={editor.reorderCheckList}
               minHeight="60px"
               labelIds={note.labelIds ?? []}
               allLabels={allLabels}
@@ -193,7 +194,7 @@ const NoteEditDialog = ({
               onToggleFormatting={() => { editor.setShowFormatting(!editor.showFormatting); editor.setShowColors(false); editor.setShowMore(false); }}
               onToggleColors={() => { editor.setShowColors(!editor.showColors); editor.setShowMore(false); }}
               onToggleMore={() => { editor.setShowMore(!editor.showMore); editor.setShowColors(false); }}
-              onColorSelect={(c) => { onColorChange(note.id, c); editor.setShowColors(false); }}
+              onColorSelect={(c) => { onColorChange(note.id, c); }}
               onArchive={() => { onArchive(note.id); onClose(); }}
               onToggleChecklist={() => { editor.toggleChecklist(); editor.setShowMore(false); }}
               onUndo={editor.undo}
@@ -201,7 +202,6 @@ const NoteEditDialog = ({
               onClose={handleSaveAndClose}
               onDelete={() => { onDelete(note.id); onClose(); }}
               onLabelPopoverOpenChange={setShowLabelPopover}
-              dropdownDirection="up"
             />
           ) : (
             <div className="flex justify-between items-center gap-0.5 px-1.5 py-1 opacity-100 transition-opacity">
@@ -214,7 +214,7 @@ const NoteEditDialog = ({
                   <RotateCw className="w-4 h-4 text-keep-toolbar" />
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); onPermanentDelete?.(note.id); }}
+                  onClick={(e) => { e.stopPropagation();  onPermanentDelete?.(note.id); }}
                   className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
                   title="Xoá vĩnh viễn"
                 >

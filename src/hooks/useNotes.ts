@@ -1,11 +1,12 @@
 'use client'
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Note } from "@/../src/types/note";
 import { useLabels } from "./useLabel";
 
 const LocalStorageKey = "keep-notes";
 
 export const loadNotes = (): Note[] => {
+  if (typeof window === 'undefined') return [];
 
   try {
     const stored = localStorage.getItem(LocalStorageKey);
@@ -19,6 +20,8 @@ export const loadNotes = (): Note[] => {
 };
 
 export const saveNotes = (notes: Note[]) => {
+  if (typeof window === 'undefined') return;
+
   try {
     localStorage.setItem(LocalStorageKey, JSON.stringify(notes));
     window.dispatchEvent(new Event("notesUpdated"))
@@ -30,6 +33,7 @@ export const saveNotes = (notes: Note[]) => {
 export const useNotes = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const { labels } = useLabels();
+  const [searchQuery, setSearchQuery] = useState("");
   const updateNotes = (updated: Note[]) => {
     setNotes(updated);
     saveNotes(updated);
@@ -124,9 +128,25 @@ export const useNotes = () => {
     updateNotes(notes.map((n) => (n.id === id ? { ...n, ...updates } : n)));
   };
 
-  const activeNotes = notes.filter((n) => !n.archived && !n.deleted);
-  const archivedNotes = notes.filter((n) => n.archived && !n.deleted);
-  const deletedNotes = notes.filter((n) => n.deleted);
+  const filteredNotes = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return notes;
+
+    const labelMap = new Map(labels.map((l) => [l.id, l]));
+
+    return notes.filter((note) => {
+      const titleMatch = note.title?.toLowerCase().includes(query);
+      const contentMatch = note.content?.toLowerCase().includes(query);
+      const labelMatch = note.labelIds?.some((labelId) =>
+        labelMap.get(labelId)?.name.toLowerCase().includes(query)
+      );
+      return Boolean(titleMatch || contentMatch || labelMatch);
+    });
+  }, [notes, searchQuery, labels]);
+
+  const activeNotes = filteredNotes.filter((n) => !n.archived && !n.deleted);
+  const archivedNotes = filteredNotes.filter((n) => n.archived && !n.deleted);
+  const deletedNotes = filteredNotes.filter((n) => n.deleted);
 
   const reorderNotes = (fromId: string, toId: string) => {
     setNotes((prev) => {
@@ -142,9 +162,12 @@ export const useNotes = () => {
 
   return {
     notes,
+    filteredNotes,
     activeNotes,
     archivedNotes,
     deletedNotes,
+    searchQuery,
+    setSearchQuery,
     getDeletedNotes,
     addNote,
     pinNote,
