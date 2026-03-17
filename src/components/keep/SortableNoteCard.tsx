@@ -24,10 +24,10 @@ const SortableNoteCard = ({ note, ...props }: SortableNoteCardProps) => {
   } = useSortable({ id: note.id });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0 : 1,
+    width: "100%",
   };
 
   return (

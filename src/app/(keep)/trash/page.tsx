@@ -1,13 +1,13 @@
 "use client";
 import { Note } from "@/types/note";
-import { useEffect, useState } from "react";
-import { useNotes } from "@/hooks/useNotes";
+import { useState } from "react";
+import { useNotesContext } from "@/context/NotesContext";
 import NoteCard from "@/components/keep/NoteCard";
 import NoteEditDialog from "@/components/keep/NoteEditDialog";
 import { Trash2 } from "lucide-react";
 
 export default function Trash() {
-    const { restoreNote, permanentDelete, deletedNotes, clearDeletedNotes } = useNotes();
+    const { restoreNote, permanentDelete, deletedNotes, clearDeletedNotes } = useNotesContext();
 
     const [viewingNote, setViewingNote] = useState<Note | null>(null);
     const [sourceRect, setSourceRect] = useState<DOMRect | null>(null);
@@ -18,8 +18,8 @@ export default function Trash() {
     };
 
     return (
-        <div className="p-4 flex flex-col items-center min-h-screen">
-            <div className="italic text-lg text-muted-foreground mb-6">
+        <div className="p-4 min-h-screen">
+            <div className=" flex justify-center italic text-lg text-muted-foreground mb-6">
                 Ghi chú sẽ bị xóa sau 7 ngày. <button className="text-keep-primary hover:underline cursor-pointer" onClick={() => {
                     clearDeletedNotes();
                 }}><p>Dọn sạch thùng rác?</p></button>
@@ -30,10 +30,10 @@ export default function Trash() {
                     <p>Không có ghi chú nào trong thùng rác.</p>
                 </div>
             ) : (
-                <div className="w-full max-w-7xl">
-                    <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4">
+                <div className="keep-masonry">
                         {deletedNotes.map((note) => (
-                            <NoteCard
+                            <div key={note.id} className="keep-masonry-item">
+                                 <NoteCard
                                 key={note.id}
                                 note={note}
                                 onPin={() => { }}
@@ -42,16 +42,17 @@ export default function Trash() {
                                 onArchive={() => { }}
                                 onRestore={() => {
                                     restoreNote(note.id);
-                                    
+
                                 }}
                                 onPermanentDelete={() => {
                                     permanentDelete(note.id);
-                                  
+
                                 }}
                                 onClick={(rect) => handleNoteClick(note, rect)}
+                                hidden={viewingNote?.id === note.id}
                             />
+                            </div>                
                         ))}
-                    </div>
                 </div>
             )}
             {viewingNote && (
@@ -69,10 +70,12 @@ export default function Trash() {
                     onColorChange={() => { }}
                     sourceRect={sourceRect}
                     onRestore={() => {
+                        setViewingNote(null)
                         restoreNote(viewingNote.id);
                     }}
                     onPermanentDelete={() => {
                         permanentDelete(viewingNote.id);
+                        setViewingNote(null)
                     }}
                 />
             )}

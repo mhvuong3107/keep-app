@@ -7,26 +7,32 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
+  DragOverlay,
 } from "@dnd-kit/core";
 import {
   SortableContext,
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import SortableNoteCard from "@/components/keep/SortableNoteCard";
+import NoteCard from "@/components/keep/NoteCard";
 import NoteInput from "@/components/keep/NoteInput";
+import MasonryGrid from "@/components/keep/MasonryGrid";
 import { Note } from "@/types/note";
 import NoteEditDialog from "@/components/keep/NoteEditDialog";
 import { useNotesContext } from "@/context/NotesContext";
 
-const Index = () => {
+const Home = () => {
   const { activeNotes, addNote, pinNote, deleteNote, archiveNote, changeColor, updateNote, reorderNotes } = useNotesContext();
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [sourceRect, setSourceRect] = useState<DOMRect | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const pinnedNotes = activeNotes.filter((n) => n.pinned);
   const otherNotes = activeNotes.filter((n) => !n.pinned);
 
   const currentEditNote = editingNote ? activeNotes.find(n => n.id === editingNote.id) || editingNote : null;
+  const draggingNote = activeId ? activeNotes.find(n => n.id === activeId) : null;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -34,12 +40,18 @@ const Index = () => {
     })
   );
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
     if (over && active.id !== over.id) {
       reorderNotes(active.id as string, over.id as string);
     }
-  }
+  };
+
   const handleNoteClick = (note: Note, rect: DOMRect) => {
     setSourceRect(rect);
     setEditingNote(note);
@@ -61,30 +73,48 @@ const Index = () => {
   return (
     <>
       <NoteInput onAddNote={addNote} />
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
         {pinnedNotes.length > 0 && (
           <>
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
               Đã ghim
             </p>
             <SortableContext items={pinnedNotes.map(n => n.id)} strategy={rectSortingStrategy}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+              <MasonryGrid>
                 {pinnedNotes.map(renderNoteCard)}
-              </div>
+              </MasonryGrid>
             </SortableContext>
           </>
         )}
 
         {otherNotes.length > 0 && pinnedNotes.length > 0 && (
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 mt-6 px-2">
             Khác
           </p>
         )}
         <SortableContext items={otherNotes.map(n => n.id)} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
+          <MasonryGrid>
             {otherNotes.map(renderNoteCard)}
-          </div>
+          </MasonryGrid>
         </SortableContext>
+
+        <DragOverlay dropAnimation={null}>
+          {draggingNote ? (
+            <div className="w-[240px] rotate-1 opacity-90 drop-shadow-xl">
+              <NoteCard
+                note={draggingNote}
+                onPin={() => {}}
+                onDelete={() => {}}
+                onColorChange={() => {}}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       {currentEditNote && (
@@ -99,13 +129,12 @@ const Index = () => {
           onPin={pinNote}
           onColorChange={changeColor}
           sourceRect={sourceRect}
-          onRestore={() => { }}
-          onPermanentDelete={() => { }}
+          onRestore={() => {}}
+          onPermanentDelete={() => {}}
         />
       )}
     </>
   );
 };
 
-export default Index;
-
+export default Home;
