@@ -1,12 +1,12 @@
 import { Menu, Search, X, RefreshCw, LayoutGrid, Settings, User } from "lucide-react";
-import { useNotesContext } from "@/context/NotesContext";
+import { useNotes } from "@/hooks/useNotes";
 
 interface KeepHeaderProps {
   onToggleSidebar: () => void;
 }
 
 const KeepHeader = ({ onToggleSidebar }: KeepHeaderProps) => {
-  const { searchQuery, setSearchQuery } = useNotesContext();
+  const { searchQuery, setSearchQuery } = useNotes();
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 p-2 border-b border-border bg-keep-header keep-header-shadow">

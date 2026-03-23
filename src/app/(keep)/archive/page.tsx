@@ -1,13 +1,13 @@
 "use client";
 import { Note } from "@/types/note";
 import { useState } from "react";
-import { useNotesContext } from "@/context/NotesContext";
+import { useNotes } from "@/hooks/useNotes";
 import NoteCard from "@/components/keep/NoteCard";
 import NoteEditDialog from "@/components/keep/NoteEditDialog";
 import { ArchiveIcon } from "lucide-react";
 
 export default function Archive() {
-    const { archivedNotes, updateNote, deleteNote, archiveNote, pinNote, changeColor } = useNotesContext();
+    const { archivedNotes, updateNote, deleteNote, archiveNote, pinNote, changeColor } = useNotes();
     const [editingNote, setEditingNote] = useState<Note | null>(null);
     const [sourceRect, setSourceRect] = useState<DOMRect | null>(null);
 

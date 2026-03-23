@@ -1,13 +1,13 @@
 "use client";
 import { Note } from "@/types/note";
 import { useState } from "react";
-import { useNotesContext } from "@/context/NotesContext";
+import { useNotes } from "@/hooks/useNotes";
 import NoteCard from "@/components/keep/NoteCard";
 import NoteEditDialog from "@/components/keep/NoteEditDialog";
 import { Trash2 } from "lucide-react";
 
 export default function Trash() {
-    const { restoreNote, permanentDelete, deletedNotes, clearDeletedNotes } = useNotesContext();
+    const { restoreNote, permanentDelete, deletedNotes, clearDeletedNotes } = useNotes();
 
     const [viewingNote, setViewingNote] = useState<Note | null>(null);
     const [sourceRect, setSourceRect] = useState<DOMRect | null>(null);
@@ -31,9 +31,9 @@ export default function Trash() {
                 </div>
             ) : (
                 <div className="keep-masonry">
-                        {deletedNotes.map((note) => (
-                            <div key={note.id} className="keep-masonry-item">
-                                 <NoteCard
+                    {deletedNotes.map((note) => (
+                        <div key={note.id} className="keep-masonry-item">
+                            <NoteCard
                                 key={note.id}
                                 note={note}
                                 onPin={() => { }}
@@ -51,8 +51,8 @@ export default function Trash() {
                                 onClick={(rect) => handleNoteClick(note, rect)}
                                 hidden={viewingNote?.id === note.id}
                             />
-                            </div>                
-                        ))}
+                        </div>
+                    ))}
                 </div>
             )}
             {viewingNote && (

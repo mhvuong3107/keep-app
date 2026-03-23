@@ -1,3 +1,4 @@
+'use client'
 import { useState, useMemo, memo } from "react";
 import { Archive, Bell, Pencil, Lightbulb, Trash2, Tag } from "lucide-react";
 import { LucideIcon } from "lucide-react";
@@ -52,13 +53,16 @@ export default function KeepSidebar({ expanded }: KeepSidebarProps) {
 
   const isExpanded = expanded || hovered;
 
-  const labelItems: SidebarNavItem[] = labels.map((label) => ({
-    type: "link",
-    id: `label-${label.id}`,
-    label: label.name,
-    icon: Tag,
-    path: `/label/${label.id}`
-  }));
+  const labelItems = useMemo<SidebarNavItem[]>(
+    () => labels.map((label) => ({
+      type: "link" as const,
+      id: `label-${label.id}`,
+      label: label.name,
+      icon: Tag,
+      path: `/label/${label.id}`,
+    })),
+    [labels]
+  );
 
   const navItems: SidebarNavItem[] = useMemo(() => {
     return [...STATIC_TOP, ...labelItems, ...STATIC_BOTTOM];
