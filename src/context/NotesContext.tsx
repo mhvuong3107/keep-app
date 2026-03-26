@@ -3,8 +3,6 @@
 import { createContext, useContext, ReactNode } from "react";
 import { useNotes } from "@/hooks/useNotes";
 
-
-
 type NotesContextType = ReturnType<typeof useNotes>;
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
