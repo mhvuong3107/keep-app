@@ -7,4 +7,6 @@ export interface Note {
   pinned: boolean;
   deleted?: boolean;
   archived: boolean;
+  createdAt?: string;
+  order?: number;
 }
