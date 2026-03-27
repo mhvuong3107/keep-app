@@ -1,131 +1,80 @@
-'use client'
-import { useEffect, useMemo, useState } from "react";
-import { Note } from "@/../src/types/note";
-import { useLabels } from "./useLabel";
-
-const LocalStorageKey = "keep-notes";
-
-export const loadNotes = (): Note[] => {
-  if (typeof window === 'undefined') return [];
-
-  try {
-    const stored = localStorage.getItem(LocalStorageKey);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (error) {
-    console.error("Error loading notes from localStorage:", error);
-  }
-  return [];
-};
-
-export const saveNotes = (notes: Note[]) => {
-  if (typeof window === 'undefined') return;
-
-  try {
-    localStorage.setItem(LocalStorageKey, JSON.stringify(notes));
-    window.dispatchEvent(new Event("notesUpdated"))
-  } catch (error) {
-    console.error("Error saving notes:", error);
-  }
-};
+'use client';
+import { useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Note } from "@/types/note";
+import { RootState, AppDispatch } from "@/lib/store";
+import {
+  addNote as addNoteAction,
+  pinNote as pinNoteAction,
+  deleteNote as deleteNoteAction,
+  permanentDelete as permanentDeleteAction,
+  clearDeletedNotes as clearDeletedNotesAction,
+  restoreNote as restoreNoteAction,
+  archiveNote as archiveNoteAction,
+  changeColor as changeColorAction,
+  updateNote as updateNoteAction,
+  reorderNotes as reorderNotesAction,
+  addLabelToNote,
+  removeLabelFromNote,
+  setSearchQuery as setSearchQueryAction,
+} from "@/lib/features/notesSlice";
 
 export const useNotes = () => {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const { labels } = useLabels();
-  const [searchQuery, setSearchQuery] = useState("");
-  const updateNotes = (updated: Note[]) => {
-    setNotes(updated);
-    saveNotes(updated);
-    window.dispatchEvent(new Event("notesUpdated"));
-  };
-  useEffect(() => {
-    setNotes(loadNotes());
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    const syncNotes = () => {
-      setNotes(loadNotes());
-    };
-    window.addEventListener("notesUpdated", syncNotes);
-
-    return () => {
-      window.removeEventListener("notesUpdated", syncNotes);
-    };
-  }, []);
-  const getDeletedNotes = () => notes.filter((n) => n.deleted);
-
+  const dispatch = useDispatch<AppDispatch>();
+  const notes = useSelector((state: RootState) => state.notes.notes);
+  const labels = useSelector((state: RootState) => state.labels.labels);
+  const searchQuery = useSelector((state: RootState) => state.notes.searchQuery);
 
   const addNote = (title: string, content: string, options?: { color?: string; pinned?: boolean; archived?: boolean; labelIds?: string[] }) => {
-    const newNote: Note = {
-      id: Date.now().toString(),
-      title,
-      content,
-      color: options?.color || "default",
-      pinned: options?.pinned || false,
-      archived: options?.archived || false,
-      labelIds: options?.labelIds || [],
-    };
-    updateNotes([newNote, ...notes])
+    dispatch(addNoteAction({ title, content, options }));
   };
 
   const pinNote = (id: string) => {
-    updateNotes(notes.map((n) => (n.id === id ? {
-      ...n,
-      pinned: !n.pinned,
-      archived: false,
-    }
-      : n)))
+    dispatch(pinNoteAction(id));
   };
 
   const deleteNote = (id: string) => {
-    updateNotes(notes.map((n) => (n.id === id ? { ...n, deleted: true } : n)))
+    dispatch(deleteNoteAction(id));
   };
 
   const permanentDelete = (id: string) => {
-    updateNotes(notes.filter((n) => n.id !== id));
+    dispatch(permanentDeleteAction(id));
   };
+
   const clearDeletedNotes = () => {
-    updateNotes(notes.filter((n) => !n.deleted));
-  }
+    dispatch(clearDeletedNotesAction());
+  };
+
   const restoreNote = (id: string) => {
-    updateNotes(notes.map((n) => (n.id === id ? { ...n, deleted: false, archived: false } : n)));
+    dispatch(restoreNoteAction(id));
   };
 
   const archiveNote = (id: string) => {
-    const updated = notes.map((n) =>
-      n.id === id ? { ...n, archived: !n.archived, pinned: false } : n
-    );
-    updateNotes(updated);
-  }
-  const addLabel = (noteId: string, labelId: string) => {
-    const label = labels.find(l => l.id === labelId);
-    if (!label) return;
-    updateNotes(notes.map((n) => {
-      if (n.id === noteId) {
-        return {
-          ...n,
-          labelIds: [...(n.labelIds || []), labelId]
-        };
-      }
-      return n;
-    }));
+    dispatch(archiveNoteAction(id));
   };
-  const removeLabel = (id: string, labelId: string) => {
-    updateNotes(notes.map((n) => {
-      if (n.id === id) {
-        return {
-          ...n,
-          labelIds: n.labelIds?.filter(id => id !== labelId)
-        };
-      }
-      return n;
-    }));
-  };
+
   const changeColor = (id: string, color: string) => {
-    updateNotes(notes.map((n) => (n.id === id ? { ...n, color } : n)));
+    dispatch(changeColorAction({ id, color }));
   };
 
   const updateNote = (id: string, updates: Partial<Note>) => {
-    updateNotes(notes.map((n) => (n.id === id ? { ...n, ...updates } : n)));
+    dispatch(updateNoteAction({ id, updates }));
+  };
+
+  const reorderNotes = (fromId: string, toId: string) => {
+    dispatch(reorderNotesAction({ fromId, toId }));
+  };
+
+  const addLabel = (noteId: string, labelId: string) => {
+    dispatch(addLabelToNote({ noteId, labelId }));
+  };
+
+  const removeLabel = (noteId: string, labelId: string) => {
+    dispatch(removeLabelFromNote({ noteId, labelId }));
+  };
+
+  const setSearchQuery = (query: string) => {
+    dispatch(setSearchQueryAction(query));
   };
 
   const filteredNotes = useMemo(() => {
@@ -148,17 +97,7 @@ export const useNotes = () => {
   const archivedNotes = filteredNotes.filter((n) => n.archived && !n.deleted);
   const deletedNotes = filteredNotes.filter((n) => n.deleted);
 
-  const reorderNotes = (fromId: string, toId: string) => {
-    setNotes((prev) => {
-      const oldIndex = prev.findIndex((n) => n.id === fromId);
-      const newIndex = prev.findIndex((n) => n.id === toId);
-      if (oldIndex === -1 || newIndex === -1) return prev;
-      const updated = [...prev];
-      const [moved] = updated.splice(oldIndex, 1);
-      updated.splice(newIndex, 0, moved);
-      return updated;
-    });
-  };
+  const getDeletedNotes = () => notes.filter((n) => n.deleted);
 
   return {
     notes,
@@ -180,6 +119,6 @@ export const useNotes = () => {
     archiveNote,
     changeColor,
     updateNote,
-    reorderNotes
+    reorderNotes,
   };
 };

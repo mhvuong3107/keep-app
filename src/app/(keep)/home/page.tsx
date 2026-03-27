@@ -20,10 +20,10 @@ import NoteInput from "@/components/keep/NoteInput";
 import MasonryGrid from "@/components/keep/MasonryGrid";
 import { Note } from "@/types/note";
 import NoteEditDialog from "@/components/keep/NoteEditDialog";
-import { useNotesContext } from "@/context/NotesContext";
+import { useNotes } from "@/hooks/useNotes";
 
 const Home = () => {
-  const { activeNotes, addNote, pinNote, deleteNote, archiveNote, changeColor, updateNote, reorderNotes } = useNotesContext();
+  const { activeNotes, addNote, pinNote, deleteNote, archiveNote, changeColor, updateNote, reorderNotes } = useNotes();
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [sourceRect, setSourceRect] = useState<DOMRect | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -108,9 +108,9 @@ const Home = () => {
             <div className="w-[240px] rotate-1 opacity-90 drop-shadow-xl">
               <NoteCard
                 note={draggingNote}
-                onPin={() => {}}
-                onDelete={() => {}}
-                onColorChange={() => {}}
+                onPin={() => { }}
+                onDelete={() => { }}
+                onColorChange={() => { }}
               />
             </div>
           ) : null}
@@ -129,8 +129,8 @@ const Home = () => {
           onPin={pinNote}
           onColorChange={changeColor}
           sourceRect={sourceRect}
-          onRestore={() => {}}
-          onPermanentDelete={() => {}}
+          onRestore={() => { }}
+          onPermanentDelete={() => { }}
         />
       )}
     </>

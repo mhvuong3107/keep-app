@@ -1,7 +1,7 @@
 "use client";
 import { Note } from "@/types/note";
 import { useState } from "react";
-import { useNotesContext } from "@/context/NotesContext";
+import { useNotes } from "@/hooks/useNotes";
 import NoteCard from "@/components/keep/NoteCard";
 import NoteEditDialog from "@/components/keep/NoteEditDialog";
 import NoteInput from "@/components/keep/NoteInput";
@@ -26,7 +26,7 @@ export default function LabelPage() {
         changeColor,
         updateNote,
         permanentDelete,
-    } = useNotesContext();
+    } = useNotes();
 
     const resolvedLabelId = label?.id;
     const labeledNotes = resolvedLabelId
