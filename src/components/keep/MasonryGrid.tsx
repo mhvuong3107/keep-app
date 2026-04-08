@@ -15,10 +15,21 @@ const MasonryGrid = ({ children, minColumnWidth = 240, gap = 8 }: MasonryGridPro
     const container = containerRef.current;
     if (!container) return;
 
-    const observer = new ResizeObserver(([entry]) => {
-      const width = entry.contentRect.width;
+    const updateColumnCount = () => {
+      const width = container.getBoundingClientRect().width || 800;
+      if (width < 500) {
+        setColumnCount(1);
+        return;
+      }
       const cols = Math.max(1, Math.floor((width + gap) / (minColumnWidth + gap)));
       setColumnCount(cols);
+    };
+
+    // Initial measurement
+    updateColumnCount();
+
+    const observer = new ResizeObserver(() => {
+      updateColumnCount();
     });
 
     observer.observe(container);
@@ -33,12 +44,14 @@ const MasonryGrid = ({ children, minColumnWidth = 240, gap = 8 }: MasonryGridPro
   return (
     <div
       ref={containerRef}
-      style={{ display: "flex", gap: `${gap}px`, alignItems: "flex-start" }}
+      style={{ display: "flex", flexWrap: "wrap", gap: `${gap}px`, overflow: "visible" }}
     >
       {columns.map((col, colIdx) => (
         <div
           key={colIdx}
-          style={{ flex: 1, display: "flex", flexDirection: "column", gap: `${gap}px`, minWidth: 0 }}
+          style={{
+            flex:1, display: "flex", flexDirection: "column", gap: `${gap}px`, minWidth: 0
+          }}
         >
           {col}
         </div>

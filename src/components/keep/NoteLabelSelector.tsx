@@ -73,13 +73,14 @@ export default function NoteLabelSelector({
           filteredLabels.map((label) => (
             <div
               key={label.id}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1 hover:bg-secondary/50 transition-colors"
+              className="flex cursor-pointer w-full items-center gap-2 rounded-md px-2 py-1 hover:bg-secondary/50 transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 handleToggle(label.id);
               }}
             >
               <Checkbox
+                className="cursor-pointer"
                 checked={normalizedSelected.has(label.id)}
                 onCheckedChange={() => handleToggle(label.id)}
                 onClick={(e) => e.stopPropagation()}

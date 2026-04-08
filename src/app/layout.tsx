@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ToastProvider } from "@/components/ToastProvider";
 import ReduxProvider from "@/components/ReduxProvider";
 
 const geistSans = Geist({
@@ -30,10 +31,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <ReduxProvider>
-          <TooltipProvider>{children}</TooltipProvider>
+          <ToastProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+          </ToastProvider>
         </ReduxProvider>
       </body>
     </html>
   );
 }
-

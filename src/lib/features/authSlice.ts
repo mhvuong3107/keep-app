@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { signInWithPopup, signOut } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, googleProvider, db } from "@/lib/firebase";
 
 export interface SerializableUser {
     uid: string;
@@ -25,9 +26,28 @@ const initialState: AuthState = {
 export const loginWithGoogle = createAsyncThunk(
     "auth/loginWithGoogle",
     async (_, { rejectWithValue }) => {
-        try {
+            try {
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
+
+            if (!user.uid) {
+                throw new Error("Google sign-in did not return a valid user ID");
+            }
+
+            const userDocRef = doc(db, "users", user.uid);
+            const userSnapshot = await getDoc(userDocRef);
+
+            if (!userSnapshot.exists()) {
+                await setDoc(userDocRef, {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    emailVerified: user.emailVerified,
+                    createdAt: new Date().toISOString(),
+                });
+            }
+
             const serializableUser: SerializableUser = {
                 uid: user.uid,
                 email: user.email,
@@ -35,6 +55,7 @@ export const loginWithGoogle = createAsyncThunk(
                 photoURL: user.photoURL,
                 emailVerified: user.emailVerified,
             };
+
             return serializableUser;
         } catch (error) {
             return rejectWithValue(error instanceof Error ? error.message : 'An error occurred');

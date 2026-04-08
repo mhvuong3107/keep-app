@@ -1,4 +1,5 @@
-export default interface Label {
+export interface Label {
   id: string;
+  userId: string;
   name: string;
 }

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Pin } from "lucide-react";
 import { getColorClass } from "./noteColors";
 import { Note } from "@/types/note";
@@ -7,9 +7,14 @@ import NoteEditorContent from "./NoteEditorContent";
 import NoteFormattingToolbar from "./NoteFormattingToolbar";
 import NoteToolbar from "./NoteToolbar";
 import NoteLabelSelector from "./NoteLabelSelector";
+import CollaboratorDialog from "./CollaboratorDialog";
 import { Trash2, RotateCw } from "lucide-react";
 import { useNotes } from "@/hooks/useNotes";
 import { useLabels } from "@/hooks/useLabel";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
+import { useCollaborators } from "@/hooks/useCollaborators";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface NoteEditDialogProps {
   note: Note;
@@ -22,60 +27,91 @@ interface NoteEditDialogProps {
   onColorChange: (id: string, color: string) => void;
   onRestore: (id: string) => void;
   onPermanentDelete: (id: string) => void;
+  onLeaveNote?: (id: string) => void;
   sourceRect?: DOMRect | null;
 }
 
 const NoteEditDialog = ({
-  note, open, onClose, onUpdate, onDelete, onArchive, onPin,
-  onColorChange, onRestore, onPermanentDelete, sourceRect
+  note, open, onClose, onDelete, onArchive, onPin, onUpdate,
+  onColorChange, onRestore, onPermanentDelete, onLeaveNote, sourceRect
 }: NoteEditDialogProps) => {
   const [phase, setPhase] = useState<"start" | "animate" | "done">("start");
   const dialogRef = useRef<HTMLDivElement>(null);
   const isDeleted = note.deleted;
-  const { removeLabel } = useNotes();
+  const { removeLabel, addCollaborator, removeCollaborator } = useNotes();
   const { labels: allLabels } = useLabels();
-  const [showLabelPopover, setShowLabelPopover] = useState(false);
+  const [, setShowLabelPopover] = useState(false);
+  const [showCollaborators, setShowCollaborators] = useState(false);
+  const user = useSelector((state: RootState) => state.auth.user);
+  const collaboratorIds = useMemo(() => [note.ownerId, ...(note.memberIds || [])], [note.ownerId, note.memberIds]);
+  const { collaborators: collaboratorUsers } = useCollaborators(collaboratorIds);
+  const filteredCollaborators = collaboratorUsers.filter(u => u.uid !== user?.uid);
+
   const editor = useNoteEditor({
     initialTitle: note.title,
-    initialContent: note.content,
+    initialYdoc: note.ydoc,
     containerRef: dialogRef as React.RefObject<HTMLElement>,
   });
+
+
+  const noteTitleRef = useRef(note.title);
+  const noteContentRef = useRef(note.contentPreview);
 
   const prevOpenRef = useRef(false);
   const prevNoteIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const opened = open && !prevOpenRef.current;
-    const switchedNote = open && note.id !== prevNoteIdRef.current;
+    if (!open) {
+      editor.disconnectHocuspocus();
+      prevOpenRef.current = false;
+      return;
+    }
+
+    const opened = !prevOpenRef.current;
+    const switchedNote = note.id !== prevNoteIdRef.current;
 
     if (opened || switchedNote) {
-      editor.initFromContent(note.title, note.content);
+      if (switchedNote) editor.disconnectHocuspocus();
+
+      editor.initFromContent(noteTitleRef.current, noteContentRef.current || "");
+
       requestAnimationFrame(() => {
         setPhase("start");
         requestAnimationFrame(() => setPhase("animate"));
       });
       const timer = setTimeout(() => setPhase("done"), 250);
 
-      prevOpenRef.current = open;
-      if (open) {
-        prevNoteIdRef.current = note.id;
-      }
+      prevOpenRef.current = true;
+      prevNoteIdRef.current = note.id;
 
       return () => clearTimeout(timer);
     }
-
     prevOpenRef.current = open;
-    if (open) {
-      prevNoteIdRef.current = note.id;
-    }
-  }, [note.id, open, note.title, note.content, editor]);
+    if (open) prevNoteIdRef.current = note.id;
+
+  }, [note.id, open]);
+  useEffect(() => {
+    if (!open) return;
+
+    if (!editor.editor) return;
+    editor.connectHocuspocus(note.id, noteTitleRef.current);
+
+  }, [open, note.id, editor.editor]);
 
   const handleSaveAndClose = () => {
-    if (!note.deleted) {
-      onUpdate(note.id, {
-        title: editor.title,
-        content: editor.getContent(),
-      });
+    const currentContent = editor.getContent();
+    const currentTitle = editor.title;
+
+    const updates: Partial<Note> = {};
+    if (currentContent !== note.contentPreview) {
+      updates.contentPreview = currentContent;
+    }
+    if (currentTitle !== note.title) {
+      updates.title = currentTitle;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      onUpdate(note.id, updates);
     }
     onClose();
   };
@@ -124,13 +160,13 @@ const NoteEditDialog = ({
           <button
             hidden={isDeleted}
             onClick={() => onPin(note.id)}
-            className="absolute top-2 right-2 p-2 rounded-full hover:bg-secondary/50 transition-colors z-10"
+            className="absolute cursor-pointer top-2 right-2 p-2 rounded-full hover:bg-secondary/50 transition-colors z-10"
             title={note.pinned ? "Bỏ ghim" : "Ghim ghi chú"}
           >
             <Pin className={`w-5 h-5 ${note.pinned ? "text-foreground fill-foreground" : "text-keep-icon"}`} />
           </button>
 
-          {/* Title */}
+          {/* Title — controlled bởi Y.Text qua editor.title */}
           <input
             type="text"
             placeholder="Tiêu đề"
@@ -138,9 +174,7 @@ const NoteEditDialog = ({
             onChange={(e) => { if (!isDeleted) editor.handleTitleChange(e.target.value); }}
             disabled={isDeleted}
             className="w-full px-4 pt-3 pb-1 bg-transparent outline-none text-foreground font-medium placeholder:text-muted-foreground pr-12 text-base"
-            autoFocus
           />
-
           {/* Content + label badges */}
           <div className="py-1 overflow-y-auto flex-1 min-h-0 note-scroll">
             <NoteEditorContent
@@ -162,6 +196,21 @@ const NoteEditDialog = ({
               onRemoveLabel={(labelId) => removeLabel(note.id, labelId)}
             />
           </div>
+          {(note.memberIds && note.memberIds.length > 0) && (
+            <div className=" mb-1 flex items-center gap-1 px-4 cursor-pointer" onClick={() => setShowCollaborators(true)}>
+              {filteredCollaborators.slice(0, 5).map((user) => (
+                <Avatar key={user.uid} className="h-6 w-6" title={user.displayName || user.email || "Unknown"}>
+                  <AvatarImage src={user.photoURL || undefined} />
+                  <AvatarFallback className="text-xs">
+                    {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+              {filteredCollaborators.length > 5 && (
+                <span className="text-xs text-muted-foreground ml-1">+{filteredCollaborators.length - 5}</span>
+              )}
+            </div>
+          )}
 
           {/* Formatting toolbar */}
           {editor.showFormatting && !editor.isChecklist && (
@@ -181,6 +230,8 @@ const NoteEditDialog = ({
                   labelIds={note.labelIds ?? []}
                 />
               }
+              note={note}
+              currentUser={user}
               showFormatting={editor.showFormatting}
               showColors={editor.showColors}
               showMore={editor.showMore}
@@ -200,7 +251,15 @@ const NoteEditDialog = ({
               onUndo={editor.undo}
               onRedo={editor.redo}
               onClose={handleSaveAndClose}
-              onDelete={() => { onDelete(note.id); onClose(); }}
+              onCollaboratorsClick={() => setShowCollaborators(true)}
+              onDelete={() => {
+                onDelete(note.id);
+                onClose();
+              }}
+              onLeaveNote={() => {
+                onLeaveNote?.(note.id);
+                onClose();
+              }}
               onLabelPopoverOpenChange={setShowLabelPopover}
             />
           ) : (
@@ -214,7 +273,7 @@ const NoteEditDialog = ({
                   <RotateCw className="w-4 h-4 text-keep-toolbar" />
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation();  onPermanentDelete?.(note.id); }}
+                  onClick={(e) => { e.stopPropagation(); onPermanentDelete?.(note.id); }}
                   className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
                   title="Xoá vĩnh viễn"
                 >
@@ -223,12 +282,21 @@ const NoteEditDialog = ({
               </div>
               <button
                 onClick={onClose}
-                className="px-6 py-1.5 text-sm font-medium text-foreground hover:bg-secondary/50 rounded transition-colors"
+                className="px-6 py-1.5 cursor-pointer text-sm font-medium text-foreground hover:bg-secondary/50 rounded transition-colors"
               >
                 Đóng
               </button>
             </div>
           )}
+
+          <CollaboratorDialog
+            open={showCollaborators}
+            collaborators={note.memberIds ?? []}
+            ownerId={note.ownerId}
+            onClose={() => setShowCollaborators(false)}
+            onAddCollaborator={(email) => addCollaborator(note.id, email)}
+            onRemoveCollaborator={(email) => removeCollaborator(note.id, email)}
+          />
         </div>
       </div>
     </div>

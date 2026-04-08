@@ -4,7 +4,18 @@ import {
   MoreVertical, Undo2, Redo2, Baseline, Tag,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { noteColors } from "./noteColors";
+import { Note } from "@/types/note";
+import { User } from "@/types/user";
 
 interface NoteToolbarProps {
   // State
@@ -16,6 +27,9 @@ interface NoteToolbarProps {
   canUndo: boolean;
   canRedo: boolean;
   archived: boolean;
+  // User and Note data
+  note?: Note;
+  currentUser?: User | null;
   // Refs
   colorRef: React.RefObject<HTMLDivElement>;
   moreRef: React.RefObject<HTMLDivElement>;
@@ -31,25 +45,30 @@ interface NoteToolbarProps {
   onUndo: () => void;
   onRedo: () => void;
   onClose: () => void;
+  onCollaboratorsClick?: () => void;
   onDelete?: () => void;
+  onLeaveNote?: () => void;
   onLabelPopoverOpenChange?: (open: boolean) => void;
 }
 
 const NoteToolbar = ({
   showFormatting, showColors, showMore, isChecklist, currentColor,
   canUndo, canRedo, colorRef, moreRef, archived,
-  labelPopoverContent,
+  labelPopoverContent, note, currentUser,
   onToggleFormatting, onToggleColors, onToggleMore, onColorSelect,
-  onArchive, onToggleChecklist, onUndo, onRedo, onClose, onDelete,
+  onArchive, onToggleChecklist, onUndo, onRedo, onClose, onCollaboratorsClick, onDelete, onLeaveNote,
   onLabelPopoverOpenChange,
 }: NoteToolbarProps) => {
-
 
   const [showLabels, setShowLabels] = useState(false);
   const [dropdownDirection, setDropdownDirection] = useState<"up" | "down">("down");
   const [colorDirection, setColorDirection] = useState<"up" | "down">("down");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const colorButtonRef = useRef<HTMLButtonElement>(null);
+
+  const isOwner = note && currentUser && note.ownerId === currentUser.uid;
 
   const handleToggleMore = () => {
     if (moreButtonRef.current) {
@@ -85,12 +104,12 @@ const NoteToolbar = ({
   };
 
   return (
-    <div className="flex items-center justify-between px-2 py-1.5">
-      <div className="flex items-center gap-0.5 flex-wrap">
+    <div className="flex-col flex items-end sm:flex-row sm:items-center  px-2 py-1.5">
+      <div className="flex w-full items-center gap-0.5 flex-wrap">
         {/* Formatting toggle */}
         <button
           onClick={onToggleFormatting}
-          className={`p-2 rounded-full hover:bg-secondary/50 transition-colors ${showFormatting ? "bg-secondary/50" : ""}`}
+          className={`p-2 cursor-pointer rounded-full hover:bg-secondary/50 transition-colors ${showFormatting ? "bg-secondary/50" : ""}`}
           title="Tuỳ chọn định dạng"
         >
           <Baseline className="w-4 h-4 text-keep-toolbar" />
@@ -101,14 +120,14 @@ const NoteToolbar = ({
           <button
             ref={colorButtonRef}
             onClick={handleToggleColors}
-            className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
+            className="p-2 cursor-pointer rounded-full hover:bg-secondary/50 transition-colors"
             title="Màu nền"
           >
             <Palette className="w-4 h-4 text-keep-toolbar" />
           </button>
           {showColors && (
             <div
-              className={`absolute left-0 p-2 bg-card rounded-lg keep-shadow z-20 flex gap-1 flex-wrap w-[180px]
+              className={`absolute left-0 p-2 bg-card rounded-lg keep-shadow z-20 flex gap-1 flex-wrap w-45
             ${colorDirection === "down" ? "top-full mt-1" : "bottom-full mb-1"}
             animate-in fade-in zoom-in-95`}
             >
@@ -116,7 +135,7 @@ const NoteToolbar = ({
                 <button
                   key={c.value}
                   onClick={() => onColorSelect(c.value)}
-                  className={`w-7 h-7 rounded-full border-2 transition-all ${currentColor === c.value ? "border-primary scale-110" : "border-transparent hover:border-keep-icon"
+                  className={`w-7 cursor-pointer h-7 rounded-full border-2 transition-all ${currentColor === c.value ? "border-primary scale-110" : "border-transparent hover:border-keep-icon"
                     } ${c.class}`}
                   title={c.name}
                 />
@@ -125,13 +144,17 @@ const NoteToolbar = ({
           )}
         </div>
 
-        <button className="p-2 rounded-full hover:bg-secondary/50 transition-colors" title="Nhắc tôi">
+        <button className="p-2 cursor-pointer rounded-full hover:bg-secondary/50 transition-colors" title="Nhắc tôi">
           <Bell className="w-4 h-4 text-keep-toolbar" />
         </button>
-        <button className="p-2 rounded-full hover:bg-secondary/50 transition-colors" title="Cộng tác viên">
+        <button
+          onClick={onCollaboratorsClick}
+          className="p-2 cursor-pointer rounded-full hover:bg-secondary/50 transition-colors"
+          title="Cộng tác viên"
+        >
           <UserPlus className="w-4 h-4 text-keep-toolbar" />
         </button>
-        <button className="p-2 rounded-full hover:bg-secondary/50 transition-colors" title="Thêm hình ảnh">
+        <button className="p-2 cursor-pointer rounded-full hover:bg-secondary/50 transition-colors" title="Thêm hình ảnh">
           <ImageIcon className="w-4 h-4 text-keep-toolbar" />
         </button>
 
@@ -139,20 +162,20 @@ const NoteToolbar = ({
         <Popover open={showLabels} onOpenChange={(open) => { setShowLabels(open); onLabelPopoverOpenChange?.(open); }}>
           <PopoverTrigger asChild>
             <button
-              className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
+              className="p-2 cursor-pointer rounded-full hover:bg-secondary/50 transition-colors"
               title="Nhãn"
             >
               <Tag className="w-4 h-4 text-keep-toolbar" />
             </button>
           </PopoverTrigger>
-          <PopoverContent className="!w-72">
+          <PopoverContent className="w-72!">
             {labelPopoverContent}
           </PopoverContent>
         </Popover>
 
         <button
           onClick={onArchive}
-          className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
+          className="p-2 cursor-pointer rounded-full hover:bg-secondary/50 transition-colors"
           title={archived ? "Bỏ lưu trữ" : "Lưu trữ"}
         >
           <Archive className="w-4 h-4 text-keep-toolbar" />
@@ -163,34 +186,43 @@ const NoteToolbar = ({
           <button
             ref={moreButtonRef}
             onClick={handleToggleMore}
-            className="p-2 rounded-full hover:bg-secondary/50 transition-colors"
+            className="p-2 cursor-pointer rounded-full hover:bg-secondary/50 transition-colors"
             title="Tuỳ chọn khác"
           >
             <MoreVertical className="w-4 h-4 text-keep-toolbar" />
           </button>
           {showMore && (
             <div
-              className={`absolute left-0 bg-card rounded-lg keep-shadow z-20 py-1 min-w-[180px]
+              className={`absolute left-0 bg-card rounded-lg keep-shadow z-20 py-1 min-w-45
             ${dropdownDirection === "down" ? "top-full mt-1" : "bottom-full mb-1"}
             animate-in fade-in zoom-in-95`}
             >
-              {onDelete && (
+              {isOwner ? (
                 <button
-                  onClick={onDelete}
-                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
+                  onClick={() => { setShowDeleteDialog(true); onToggleMore(); }}
+                  className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
                 >
                   Xoá ghi chú
                 </button>
+              ) : (
+                (note?.memberIds?.includes(currentUser?.uid || "")) && (
+                  <button
+                    onClick={() => { setShowLeaveDialog(true); onToggleMore(); }}
+                    className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
+                  >
+                    Huỷ cộng tác
+                  </button>
+                )
               )}
               <button
                 onClick={onToggleChecklist}
-                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
+                className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
               >
                 {isChecklist ? "Ẩn hộp kiểm" : "Hiện hộp kiểm"}
               </button>
               <button
                 onClick={() => { }}
-                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
+                className="flex cursor-pointer items-center gap-3 w-full px-4 py-2 text-sm text-card-foreground hover:bg-secondary transition-colors"
               >
                 Tạo bản sao
               </button>
@@ -202,7 +234,7 @@ const NoteToolbar = ({
         <button
           onClick={onUndo}
           disabled={!canUndo}
-          className="p-2 rounded-full hover:bg-secondary/50 transition-colors disabled:opacity-30"
+          className="p-2 cursor-pointer rounded-full hover:bg-secondary/50 transition-colors disabled:opacity-30"
           title="Hoàn tác"
         >
           <Undo2 className="w-4 h-4 text-keep-toolbar" />
@@ -210,18 +242,67 @@ const NoteToolbar = ({
         <button
           onClick={onRedo}
           disabled={!canRedo}
-          className="p-2 rounded-full hover:bg-secondary/50 transition-colors disabled:opacity-30"
+          className="p-2 cursor-pointer rounded-full hover:bg-secondary/50 transition-colors disabled:opacity-30"
           title="Làm lại"
         >
           <Redo2 className="w-4 h-4 text-keep-toolbar" />
         </button>
       </div>
-      <button
-        onClick={onClose}
-        className="px-6 py-1.5 text-sm font-medium text-foreground hover:bg-secondary/50 rounded transition-colors"
-      >
-        Đóng
-      </button>
+        <button
+          onClick={onClose}
+          className="px-6 py-3 md:py-1.5 cursor-pointer text-sm font-medium text-foreground hover:bg-secondary/50 rounded transition-colors"
+        >
+          Đóng
+        </button>
+      {/* Delete note dialog - for owner */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xoá ghi chú?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ghi chú bị xoá sẽ không hiển thị với những người bạn đã chia sẻ ghi chú đó.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-end items-baseline gap-2">
+            <AlertDialogCancel className="hover:bg-secondary">Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowDeleteDialog(false);
+                onDelete?.();
+              }}
+              className="cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Xoá
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Leave note dialog - for collaborators */}
+      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Huỷ cộng tác?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ghi chú này sẽ không còn được chia sẻ với bạn.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-end items-baseline gap-2">
+            <AlertDialogCancel className="cursor-pointer hover:bg-secondary" onClick={e => e.stopPropagation()}>
+              Hủy
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="cursor-pointer"
+              onClick={() => {
+                setShowLeaveDialog(false);
+                onLeaveNote?.();
+              }}
+            >
+              Huỷ cộng tác
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

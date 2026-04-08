@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo, memo } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { Archive, Bell, Pencil, Lightbulb, Trash2, Tag } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import Link from "next/link";
@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dialog";
 
 interface KeepSidebarProps {
-  expanded?: boolean;
+  expanded: boolean;
+  onNavigate?: () => void;
 }
 
 type SidebarLinkItem = {
@@ -44,15 +45,21 @@ const STATIC_BOTTOM: SidebarNavItem[] = [
   { type: "link", id: "trash", label: "Thùng rác", icon: Trash2, path: "/trash" }
 ];
 
-export default function KeepSidebar({ expanded }: KeepSidebarProps) {
+export default function KeepSidebar({ expanded, onNavigate }: KeepSidebarProps) {
   const pathname = usePathname();
   const { labels } = useLabels();
-
+  const [isMobile, setIsMobile] = useState(true);
   const [hovered, setHovered] = useState(false);
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
 
-  const isExpanded = expanded || hovered;
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
+  const isExpanded = isMobile ? expanded : (!expanded || hovered);
   const labelItems = useMemo<SidebarNavItem[]>(
     () => labels.map((label) => ({
       type: "link" as const,
@@ -75,10 +82,18 @@ export default function KeepSidebar({ expanded }: KeepSidebarProps) {
   return (
     <>
       <aside
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        className={`sticky top-16 h-[calc(100vh-4rem)] bg-keep-sidebar transition-all duration-200 flex-shrink-0 z-20 ${isExpanded ? "w-[280px]" : "w-[72px]"
-          }`}
+        onMouseEnter={() => !isMobile && setHovered(true)}
+        onMouseLeave={() => !isMobile && setHovered(false)}
+        className={`
+        fixed h-full bg-keep-sidebar z-40 w-[200px]
+        transition-transform duration-300
+        
+        ${isExpanded ? "translate-x-0" : "-translate-x-full"}
+
+        md:sticky md:top-16 md:h-[calc(100vh-4rem)]
+        md:translate-x-0
+        ${isExpanded ? "md:w-[250px]" : "md:w-[72px]"}
+        `}
       >
         <nav className="flex flex-col items-center pt-2">
           {navItems.map((item) => (
@@ -87,7 +102,9 @@ export default function KeepSidebar({ expanded }: KeepSidebarProps) {
               item={item}
               pathname={pathname}
               isExpanded={isExpanded}
+              isMobile={isMobile}
               onEditLabels={handleEditLabelsClick}
+              onNavigate={onNavigate}
             />
           ))}
         </nav>
@@ -106,14 +123,18 @@ interface SidebarItemProps {
   item: SidebarNavItem;
   pathname: string;
   isExpanded: boolean;
+  isMobile: boolean;
   onEditLabels: () => void;
+  onNavigate?: () => void;
 }
 
 const SidebarItem = memo(function SidebarItem({
   item,
   pathname,
   isExpanded,
-  onEditLabels
+  isMobile,
+  onEditLabels,
+  onNavigate
 }: SidebarItemProps) {
   const Icon = item.icon;
 
@@ -131,7 +152,7 @@ const SidebarItem = memo(function SidebarItem({
       <button
         onClick={onEditLabels}
         title={!isExpanded ? item.label : undefined}
-        className={`${baseClass} hover:bg-keep-sidebar-hover rounded-r-full`}
+        className={`${baseClass} cursor-pointer hover:bg-keep-sidebar-hover rounded-r-full`}
       >
         <div className="flex items-center justify-center w-12 h-12 flex-shrink-0">
           <Icon className="w-5 h-5 text-keep-icon" />
@@ -146,13 +167,21 @@ const SidebarItem = memo(function SidebarItem({
     );
   }
   if (item.type !== "link") return null;
+
+  const handleLinkClick = () => {
+    if (isMobile && onNavigate) {
+      onNavigate();
+    }
+  };
+
   return (
     <Link
       href={item.path}
+      onClick={handleLinkClick}
       title={!isExpanded ? item.label : undefined}
       className={`${baseClass} ${isActive
-          ? "bg-keep-sidebar-active rounded-r-full"
-          : "hover:bg-keep-sidebar-hover rounded-r-full"
+        ? "bg-keep-sidebar-active rounded-r-full"
+        : "hover:bg-keep-sidebar-hover rounded-r-full"
         }`}
     >
       <div className="flex items-center justify-center w-12 h-12 flex-shrink-0">

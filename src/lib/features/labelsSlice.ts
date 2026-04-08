@@ -1,14 +1,14 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { collection, doc, addDoc, updateDoc, onSnapshot, deleteDoc, getDocs } from "firebase/firestore";
+import { collection, doc, addDoc, updateDoc, onSnapshot, deleteDoc, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
-import Label from "@/types/label";
+import { Label } from "@/types/label";
 
 
-const getUserLabelsCollection = (userId: string) => collection(db, "users", userId, "labels");
+const getLabelsCollection = () => collection(db, "labels");
 
 export const subscribeToUserLabels = (userId: string, onLabelsChange: (labels: Label[]) => void) => {
-    const labelsCollection = getUserLabelsCollection(userId);
-    return onSnapshot(labelsCollection, (snapshot) => {
+    const labelsQuery = query(getLabelsCollection(), where("userId", "==", userId));
+    return onSnapshot(labelsQuery, (snapshot) => {
         const labels = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Label));
         onLabelsChange(labels);
     });
@@ -18,8 +18,8 @@ const fetchLabelsFromFirestore = createAsyncThunk(
     "labels/fetchLabels",
     async (userId: string, { rejectWithValue }) => {
         try {
-            const labelsCollection = getUserLabelsCollection(userId);
-            const snapshot = await getDocs(labelsCollection);
+            const labelsQuery = query(getLabelsCollection(), where("userId", "==", userId));
+            const snapshot = await getDocs(labelsQuery);
             const labels = snapshot.docs.map((doc) => ({
                 id: doc.id,
                 ...doc.data(),
@@ -35,40 +35,42 @@ const fetchLabelsFromFirestore = createAsyncThunk(
 
 const addLabelToFirestore = createAsyncThunk(
     "labels/addLabel",
-    async (payload: { userId: string; name: string }, { rejectWithValue }) => {
+    async (payload: { userId: string; name: string }) => {
         const { userId, name } = payload;
-        const labelsCollection = getUserLabelsCollection(userId);
-        const docRef = await addDoc(labelsCollection, { name: name.trim() });
-        return { id: docRef.id, name: name.trim() };
+        const labelsCollection = getLabelsCollection();
+        const docRef = await addDoc(labelsCollection, { name: name.trim(), userId });
+        return { id: docRef.id, userId, name: name.trim() };
     }
 );
 
 const updateLabelInFirestore = createAsyncThunk(
     "labels/updateLabel",
-    async (payload: { userId: string; labelId: string; newName: string }, { rejectWithValue }) => {
+    async (payload: { userId: string; labelId: string; newName: string }) => {
         const { userId, labelId, newName } = payload;
-        const labelDoc = doc(db, "users", userId, "labels", labelId);
+        const labelDoc = doc(db, "labels", labelId);
         await updateDoc(labelDoc, { name: newName.trim() });
-        return { id: labelId, name: newName.trim() };
+        return { id: labelId, userId, name: newName.trim() };
     }
 );
 
 const deleteLabelFromFirestore = createAsyncThunk(
     "labels/deleteLabel",
-    async (payload: { userId: string; labelId: string }, { rejectWithValue }) => {
+    async (payload: { userId: string; labelId: string }) => {
         const { userId, labelId } = payload;
-        const labelDoc = doc(db, "users", userId, "labels", labelId);
+        const labelDoc = doc(db, "labels", labelId);
         await deleteDoc(labelDoc);
-        return { id: labelId };
+        return { id: labelId, userId };
     }
 );
 
 export interface LabelsState {
     labels: Label[];
+    loaded: boolean;
 }
 
 const initialState: LabelsState = {
     labels: [],
+    loaded: false,
 };
 
 const uniqueLabels = (labels: Label[]): Label[] => {
@@ -87,29 +89,14 @@ const slice = createSlice({
     reducers: {
         setLabels(state, action: PayloadAction<Label[]>) {
             state.labels = uniqueLabels(action.payload);
-        },
-        addLabel(state, action: PayloadAction<{ name: string }>) {
-            const newLabel: Label = { id: Date.now().toString(), name: action.payload.name.trim() };
-            state.labels = [...state.labels, newLabel];
-        },
-        removeLabel(state, action: PayloadAction<string>) {
-            state.labels = state.labels.filter((label) => label.id !== action.payload);
-        },
-        updateLabel(state, action: PayloadAction<{ id: string; newName: string }>) {
-            state.labels = state.labels.map((label) =>
-                label.id === action.payload.id
-                    ? { ...label, name: action.payload.newName.trim() }
-                    : label
-            );
-        },
-        mergeLabel(state, action: PayloadAction<{ sourceId: string; targetId: string }>) {
-            state.labels = state.labels.filter((label) => label.id !== action.payload.sourceId);
+            state.loaded = true;
         },
     },
     extraReducers: (builder) => {
         builder
             .addCase(fetchLabelsFromFirestore.fulfilled, (state, action: PayloadAction<Label[]>) => {
                 state.labels = action.payload;
+                state.loaded = true;
             })
             .addCase(addLabelToFirestore.fulfilled, (state, action: PayloadAction<Label>) => {
                 const exists = state.labels.some((label) => label.id === action.payload.id);
@@ -128,7 +115,7 @@ const slice = createSlice({
     },
 });
 
-export const { setLabels, addLabel, removeLabel, updateLabel, mergeLabel } = slice.actions;
+export const { setLabels } = slice.actions;
 
 export {
     fetchLabelsFromFirestore,

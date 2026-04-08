@@ -5,9 +5,12 @@ import { useNotes } from "@/hooks/useNotes";
 import NoteCard from "@/components/keep/NoteCard";
 import NoteEditDialog from "@/components/keep/NoteEditDialog";
 import { ArchiveIcon } from "lucide-react";
+import { useToasts } from "@/components/ToastProvider";
+import { NotesSkeleton } from "@/components/keep/NotesSkeleton";
 
 export default function Archive() {
-    const { archivedNotes, updateNote, deleteNote, archiveNote, pinNote, changeColor } = useNotes();
+    const { loaded, archivedNotes, updateNote, deleteNote, archiveNote, pinNote, changeColor } = useNotes();
+    const { addToast } = useToasts();
     const [editingNote, setEditingNote] = useState<Note | null>(null);
     const [sourceRect, setSourceRect] = useState<DOMRect | null>(null);
 
@@ -17,6 +20,10 @@ export default function Archive() {
         setSourceRect(rect);
         setEditingNote(note);
     };
+
+    if (!loaded) {
+        return <NotesSkeleton />;
+    }
 
     return (
         <div className="w-full">
@@ -32,10 +39,31 @@ export default function Archive() {
                             <NoteCard
                                 note={note}
                                 onClick={(rect) => handleNoteClick(note, rect)}
-                                onPin={() => { pinNote(note.id); }}
-                                onDelete={() => { }}
-                                onColorChange={() => { }}
-                                onArchive={() => { archiveNote(note.id); }}
+                                onPin={() => {
+                                    pinNote(note.id);
+                                    addToast({
+                                        title: note.pinned ? "Gỡ ghim ghi chú" : "Ghim ghi chú",
+                                        variant: "default",
+                                    });
+                                }}
+                                onDelete={(id) => {
+                                    deleteNote(id);
+                                    setEditingNote(null);
+                                    addToast({
+                                        title: "Đã xoá ghi chú",
+                                        description: "Ghi chú đã được di chuyển đến thùng rác.",
+                                        variant: "default",
+                                    });
+                                }}
+                                onColorChange={(id, color) => {changeColor(id, color); }}
+                                onArchive={() => {
+                                    archiveNote(note.id);
+                                    addToast({
+                                        title: "Bỏ lưu trữ ghi chú",
+                                        variant: "default",
+                                    });
+                                }}
+                                onUpdate={updateNote}
                                 onRestore={() => { }}
                                 onPermanentDelete={() => { }}
                                 hidden={currentEditNote?.id === note.id}
@@ -52,9 +80,30 @@ export default function Archive() {
                     open={!!currentEditNote}
                     onClose={() => { setEditingNote(null); setSourceRect(null); }}
                     onUpdate={updateNote}
-                    onDelete={(id) => { deleteNote(id); setEditingNote(null); }}
-                    onArchive={(id) => { archiveNote(id); setEditingNote(null); }}
-                    onPin={pinNote}
+                    onDelete={(id) => {
+                        deleteNote(id);
+                        setEditingNote(null);
+                        addToast({
+                            title: "Đã xoá ghi chú",
+                            description: "Ghi chú đã được di chuyển đến thùng rác.",
+                            variant: "default",
+                        });
+                    }}
+                    onArchive={(id) => {
+                        archiveNote(id);
+                        setEditingNote(null);
+                        addToast({
+                            title: "Bỏ lưu trữ ghi chú",
+                            variant: "default",
+                        });
+                    }}
+                    onPin={(id) => {
+                        pinNote(id);
+                        addToast({
+                            title: currentEditNote.pinned ? "Gỡ ghim ghi chú" : "Ghim ghi chú",
+                            variant: "default",
+                        });
+                    }}
                     onColorChange={changeColor}
                     sourceRect={sourceRect}
                     onRestore={() => { }}
