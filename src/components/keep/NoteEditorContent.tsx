@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import { GripVertical, X } from "lucide-react";
 import { EditorContent, type Editor } from "@tiptap/react";
 import type { ChecklistItem } from "@/hooks/useNoteEditor";
-import Label from "@/types/label";
+import { Label } from "@/types/label";
 import {
   DndContext,
   closestCenter,
@@ -23,9 +23,10 @@ interface SortableChecklistItemProps {
   onUpdate: (index: number, text: string) => void;
   onKeyDown: (index: number, e: React.KeyboardEvent) => void;
   onRemove: (index: number) => void;
+  disabled?: boolean;
 }
 
-const SortableChecklistItem = ({ item, onToggle, onUpdate, onKeyDown, onRemove }: SortableChecklistItemProps) => {
+const SortableChecklistItem = ({ item, onToggle, onUpdate, onKeyDown, onRemove, disabled = false }: SortableChecklistItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
 
   const style = {
@@ -37,27 +38,29 @@ const SortableChecklistItem = ({ item, onToggle, onUpdate, onKeyDown, onRemove }
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-1 group/item">
       <GripVertical
-        className="w-4 h-4 text-muted-foreground/40 cursor-grab opacity-0 group-hover/item:opacity-100 transition-opacity"
-        {...attributes}
-        {...listeners}
+        className="w-4 h-4 text-muted-foreground/40 cursor-grab transition-opacity outline-none focus-visible:outline-none focus-visible:ring-0 active:outline-none active:ring-0"
+        {...(disabled ? {} : { ...attributes, ...listeners })}
       />
       <input
         type="checkbox"
         checked={item.checked}
         onChange={() => onToggle(item.originalIndex)}
-        className="w-[18px] h-[18px] rounded border-muted-foreground/50 accent-primary cursor-pointer"
+        disabled={disabled}
+        className="w-[18px] h-[18px] rounded border-muted-foreground/50 accent-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       />
       <input
         type="text"
         value={item.text}
         onChange={(e) => onUpdate(item.originalIndex, e.target.value)}
         onKeyDown={(e) => onKeyDown(item.originalIndex, e)}
+        disabled={disabled}
         placeholder="Mục danh sách"
-        className="checklist-input flex-1 px-2 py-1.5 bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground"
+        className="checklist-input flex-1 px-2 py-1.5 bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
       />
       <button
         onClick={() => onRemove(item.originalIndex)}
-        className="p-1 rounded-full opacity-0 group-hover/item:opacity-100 hover:bg-secondary/50 transition-opacity"
+        disabled={disabled}
+        className="p-1 rounded-full opacity-0 group-hover/item:opacity-100 hover:bg-secondary/50 transition-opacity disabled:opacity-0 disabled:cursor-not-allowed"
       >
         <X className="w-3.5 h-3.5 text-keep-icon" />
       </button>
@@ -85,6 +88,7 @@ interface NoteEditorContentProps {
 }
 
 const NoteEditorContent = ({
+  editable = true,
   isChecklist, checklistItems, showCompleted, editor,
   labelIds,
   allLabels,
@@ -93,6 +97,11 @@ const NoteEditorContent = ({
   onChecklistKeyDown, onRemoveChecklistItem, onAddChecklistItem,
   onSetShowCompleted, onReorderChecklist, minHeight = "24px",
 }: NoteEditorContentProps) => {
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(editable);
+    }
+  }, [editor, editable]);
   const uncheckedItems = useMemo(
     () => checklistItems.map((item, i) => ({ ...item, originalIndex: i })).filter(item => !item.checked),
     [checklistItems]
@@ -115,13 +124,13 @@ const NoteEditorContent = ({
       {allLabels.filter(l => labelIds.includes(l.id)).map(label => (
         <span
           key={label.id}
-          className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+          className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-secondary text-secondary-foreground"
         >
           {label.name}
           {onRemoveLabel && (
             <button
               onClick={(e) => { e.stopPropagation(); onRemoveLabel(label.id); }}
-              className="ml-0.5 hover:text-foreground transition-colors"
+              className="cursor-pointer ml-0.5 hover:text-foreground transition-colors"
               title="Xoá nhãn"
             >
               <X className="w-3 h-3" />
@@ -141,6 +150,7 @@ const NoteEditorContent = ({
               <SortableChecklistItem
                 key={item.id}
                 item={item}
+                disabled={!editable}
                 onToggle={onToggleChecklistItem}
                 onUpdate={onUpdateChecklistItem}
                 onKeyDown={onChecklistKeyDown}
@@ -150,7 +160,8 @@ const NoteEditorContent = ({
 
             <button
               onClick={onAddChecklistItem}
-              className="flex items-center gap-2 px-5 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              disabled={!editable}
+              className="flex items-center gap-2 px-5 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="text-lg leading-none">+</span> Mục danh sách
             </button>
@@ -173,6 +184,7 @@ const NoteEditorContent = ({
                   <SortableChecklistItem
                     key={item.id}
                     item={item}
+                    disabled={!editable}
                     onToggle={onToggleChecklistItem}
                     onUpdate={onUpdateChecklistItem}
                     onKeyDown={onChecklistKeyDown}

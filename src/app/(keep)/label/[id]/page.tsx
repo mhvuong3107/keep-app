@@ -8,15 +8,16 @@ import NoteInput from "@/components/keep/NoteInput";
 import { useParams } from "next/navigation";
 import { useLabels } from "@/hooks/useLabel";
 import { ArchiveIcon, StickyNote } from "lucide-react";
+import { NotesSkeleton } from "@/components/keep/NotesSkeleton";
 
 export default function LabelPage() {
     const params = useParams();
     const labelId = params?.id as string;
-    const { labels } = useLabels();
+    const { labels, loaded: labelsLoaded } = useLabels();
     const label = labels.find((l) => l.id === labelId) || labels.find((l) => l.name === labelId);
-
     const {
         notes,
+        loaded: notesLoaded,
         filteredNotes,
         addNote,
         pinNote,
@@ -52,13 +53,18 @@ export default function LabelPage() {
         setEditingNote(note);
     };
 
-    if (!label) {
+    if (!label && labelsLoaded) {
         return (
             <div className="mt-10 flex flex-col text-lg items-center justify-center flex-1 text-muted-foreground">
                 <ArchiveIcon className="opacity-50 w-30 h-30 mb-4" />
                 <p>Nhãn không tồn tại.</p>
             </div>
         );
+    }
+
+    // Wait for both labels and notes to load
+    if (!labelsLoaded || !notesLoaded) {
+        return <NotesSkeleton />;
     }
 
     const hasAnyNotes = activeLabeledNotes.length > 0 || archivedLabeledNotes.length > 0;
@@ -79,17 +85,19 @@ export default function LabelPage() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
                         Đã ghim
                     </p>
-                    <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4">
+                    <div className="keep-masonry">
                         {pinnedLabeledNotes.map((note) => (
-                            <NoteCard
-                                key={note.id}
-                                note={note}
-                                onClick={(rect) => handleNoteClick(note, rect)}
-                                onPin={pinNote}
-                                onDelete={deleteNote}
-                                onColorChange={changeColor}
-                                onArchive={archiveNote}
-                            />
+                            <div key={note.id} className="keep-masonry-item">
+                                <NoteCard
+                                    note={note}
+                                    onClick={(rect) => handleNoteClick(note, rect)}
+                                    onPin={pinNote}
+                                    onDelete={deleteNote}
+                                    onColorChange={changeColor}
+                                    onArchive={archiveNote}
+                                    onUpdate={updateNote}
+                                />
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -97,20 +105,24 @@ export default function LabelPage() {
 
             {otherLabeledNotes.length > 0 && (
                 <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 px-2">
-                        Khác
-                    </p>
-                    <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4">
+                    {pinnedLabeledNotes.length > 0 && (
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3 mt-6 px-2">
+                            Khác
+                        </p>
+                    )}
+                    <div className="keep-masonry">
                         {otherLabeledNotes.map((note) => (
-                            <NoteCard
-                                key={note.id}
-                                note={note}
-                                onClick={(rect) => handleNoteClick(note, rect)}
-                                onPin={pinNote}
-                                onDelete={deleteNote}
-                                onColorChange={changeColor}
-                                onArchive={archiveNote}
-                            />
+                            <div key={note.id} className="keep-masonry-item">
+                                <NoteCard
+                                    note={note}
+                                    onClick={(rect) => handleNoteClick(note, rect)}
+                                    onPin={pinNote}
+                                    onDelete={deleteNote}
+                                    onColorChange={changeColor}
+                                    onArchive={archiveNote}
+                                    onUpdate={updateNote}
+                                />
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -131,7 +143,7 @@ export default function LabelPage() {
                                 onDelete={deleteNote}
                                 onColorChange={changeColor}
                                 onArchive={archiveNote}
-                                onRestore={restoreNote}
+                                onUpdate={updateNote}
                             />
                         ))}
                     </div>

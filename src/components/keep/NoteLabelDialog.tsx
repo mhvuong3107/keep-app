@@ -1,8 +1,7 @@
 import { useState, useRef } from "react";
-import { Plus, X, Check, Tag } from "lucide-react";
+import { Plus, X, Check } from "lucide-react";
 import { useLabels } from "@/hooks/useLabel";
 import { Input } from "@/components/ui/input";
-import Label from "@/types/label";
 import LabelItem from "./LabelItem";
 import { AlertDialog } from "radix-ui";
 
@@ -21,6 +20,8 @@ export default function NoteLabelDialog({ onClose }: NoteLabelDialogProps) {
     const [alertMessage, setAlertMessage] = useState("");
     const [mergeSourceId, setMergeSourceId] = useState<string | undefined>(undefined);
     const [mergeTargetId, setMergeTargetId] = useState<string | undefined>(undefined);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteLabelId, setDeleteLabelId] = useState<string | undefined>(undefined);
 
     const handleAddLabel = () => {
         const result = addLabel(newLabel);
@@ -34,8 +35,19 @@ export default function NoteLabelDialog({ onClose }: NoteLabelDialogProps) {
         setError("");
     };
 
-    const handleDeleteLabel = (label: Label) => {
-        removeLabel(label.id);
+    const handleDeleteLabel = (labelId: string) => {
+        setDeleteLabelId(labelId);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDeleteLabel = () => {
+        if (!deleteLabelId) {
+            return;
+        }
+
+        removeLabel(deleteLabelId);
+        setDeleteDialogOpen(false);
+        setDeleteLabelId(undefined);
     };
 
     const handleUpdateLabel = (id: string, name: string) => {
@@ -60,6 +72,9 @@ export default function NoteLabelDialog({ onClose }: NoteLabelDialogProps) {
         setMergeSourceId(undefined);
         setMergeTargetId(undefined);
     };
+
+    const deleteLabel = labels.find((label) => label.id === deleteLabelId);
+
     return (
         <div className=" p-4 rounded-none">
             <h3 className="text-lg text-center font-semibold mb-4">Chỉnh sửa nhãn</h3>
@@ -67,13 +82,13 @@ export default function NoteLabelDialog({ onClose }: NoteLabelDialogProps) {
             <div className="flex items-center gap-2 mb-4">
                 {isAdding ?
                     <button onClick={() => { setIsAdding(false); setNewLabel(""); }}>
-                        <X className="w-5 h-5 hover:text-gray-900 hover:bg-secondary/70 text-muted-foreground" />
+                        <X className="cursor-pointer w-5 h-5 hover:text-gray-900 hover:bg-secondary/70 text-muted-foreground" />
                     </button> :
                     <button onClick={() => {
                         setIsAdding(true);
                         inputRef.current?.focus();
                     }} disabled={isAdding} >
-                        <Plus className="w-5 h-5 hover:text-gray-900 hover:bg-secondary/70 text-muted-foreground" />
+                        <Plus className="cursor-pointer w-5 h-5 hover:text-gray-900 hover:bg-secondary/70 text-muted-foreground" />
                     </button>}
                 <Input
                     ref={inputRef}
@@ -91,7 +106,7 @@ export default function NoteLabelDialog({ onClose }: NoteLabelDialogProps) {
                 />
                 {isAdding && (
                     <button onClick={handleAddLabel} >
-                        <Check className="w-5 h-5 hover:text-gray-900 hover:bg-secondary/70 text-muted-foreground" />
+                        <Check className="cursor-pointer w-5 h-5 hover:text-gray-900 hover:bg-secondary/70 text-muted-foreground" />
                     </button>
                 )}
 
@@ -103,7 +118,7 @@ export default function NoteLabelDialog({ onClose }: NoteLabelDialogProps) {
                     <LabelItem
                         key={label.id}
                         label={label}
-                        onDelete={() => handleDeleteLabel(label)}
+                        onDelete={() => handleDeleteLabel(label.id)}
                         onUpdate={handleUpdateLabel}
                     />
                 ))}
@@ -111,12 +126,47 @@ export default function NoteLabelDialog({ onClose }: NoteLabelDialogProps) {
             {/* Close Button */}
             {onClose && (
                 <div className="flex font-medium text-sm justify-end gap-2 mt-4 pt-3">
-                    <button onClick={onClose} >
+                    <button onClick={onClose} className="cursor-pointer">
                         Xong
                     </button>
                 </div>
             )}
-            {/* Alert Dialog */}
+            {/* Delete confirmation dialog */}
+            <AlertDialog.Root open={deleteDialogOpen} onOpenChange={(open) => {
+                setDeleteDialogOpen(open);
+                if (!open) setDeleteLabelId(undefined);
+            }}>
+                <AlertDialog.Portal>
+                    <AlertDialog.Overlay className="fixed inset-0 bg-black/40" />
+
+                    <AlertDialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 w-96 z-50">
+                        <AlertDialog.Title className="text-lg font-semibold">
+                            {deleteLabel?.name ? `Xoá nhãn "${deleteLabel.name}"?` : "Xoá nhãn này?"}
+                        </AlertDialog.Title>
+
+                        <AlertDialog.Description className="text-sm mt-2">
+                            Xoá nhãn này và gỡ khỏi tất cả các note có gắn nhãn?
+                        </AlertDialog.Description>
+
+                        <div className="flex justify-end gap-2 mt-4">
+                            <AlertDialog.Cancel asChild>
+                                <button className="cursor-pointer px-2 py-1 border text-sm ">
+                                    Hủy
+                                </button>
+                            </AlertDialog.Cancel>
+
+                            <button
+                                onClick={confirmDeleteLabel}
+                                className="cursor-pointer px-2 py-1 bg-destructive text-white text-sm"
+                            >
+                                Xoá
+                            </button>
+                        </div>
+                    </AlertDialog.Content>
+                </AlertDialog.Portal>
+            </AlertDialog.Root>
+
+            {/* Merge label alert dialog */}
             <AlertDialog.Root open={alertOpen} onOpenChange={setAlertOpen}>
                 <AlertDialog.Portal>
                     <AlertDialog.Overlay className="fixed inset-0 bg-black/40" />
@@ -132,14 +182,14 @@ export default function NoteLabelDialog({ onClose }: NoteLabelDialogProps) {
 
                         <div className="flex justify-end gap-2 mt-4">
                             <AlertDialog.Cancel asChild>
-                                <button className="px-2 py-1 border text-sm ">
+                                <button className="cursor-pointer px-2 py-1 border text-sm ">
                                     Hủy
                                 </button>
                             </AlertDialog.Cancel>
 
                             <button
                                 onClick={handleConfirmMerge}
-                                className="px-2 py-1 bg-primary text-white text-sm"
+                                className="cursor-pointer px-2 py-1 bg-primary text-white text-sm"
                             >
                                 Hợp nhất
                             </button>
@@ -150,4 +200,3 @@ export default function NoteLabelDialog({ onClose }: NoteLabelDialogProps) {
         </div>
     );
 }
-

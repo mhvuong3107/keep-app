@@ -1,5 +1,6 @@
-import { Menu, Search, X, RefreshCw, LayoutGrid, Settings, User } from "lucide-react";
+import { Menu, Search, X, RefreshCw, LayoutGrid, Settings } from "lucide-react";
 import { useNotes } from "@/hooks/useNotes";
+import { AuthButton } from "./AuthButton";
 
 interface KeepHeaderProps {
   onToggleSidebar: () => void;
@@ -61,11 +62,7 @@ const KeepHeader = ({ onToggleSidebar }: KeepHeaderProps) => {
         <button className="p-3 rounded-full hover:bg-secondary transition-colors cursor-pointer">
           <Settings className="w-5 h-5 text-keep-icon" />
         </button>
-        <button className="p-3 rounded-full hover:bg-secondary transition-colors ml-1 cursor-pointer">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-            <User className="w-5 h-5 text-primary-foreground" />
-          </div>
-        </button>
+        <AuthButton />
       </div>
     </header>
   );

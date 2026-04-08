@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Tag, Trash, Pencil, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import Label from "@/types/label";
+import { Label } from "@/types/label";
 
 
 interface LabelItemProps {
@@ -30,7 +30,7 @@ export default function LabelItem({ label, onDelete, onUpdate }: LabelItemProps)
     >
       {/* LEFT ICON */}
       {isHover || isEditing ? (
-        <button className="hover:bg-secondary/70 rounded" onClick={() => onDelete(label.id)}>
+        <button className="cursor-pointer hover:bg-secondary/70 rounded" onClick={() => onDelete(label.id)}>
           <Trash className="w-5 h-5 text-muted-foreground" />
         </button>
       ) : (
@@ -49,13 +49,13 @@ export default function LabelItem({ label, onDelete, onUpdate }: LabelItemProps)
 
       {/* RIGHT ICON */}
       {isEditing ? (
-        <Check className="w-5 h-5 text-muted-foreground" />
+        <Check className="cursor-pointer w-5 h-5 text-muted-foreground" />
       ) : (
-        <button className="hover:bg-secondary/70 rounded" onClick={() => {
+        <button className="cursor-pointer hover:bg-secondary/70 rounded" onClick={() => {
           setIsEditing(true);
           inputRef.current?.focus();
         }}>
-          <Pencil className="w-5 h-5 text-muted-foreground" />
+          <Pencil className="cursor-pointer w-5 h-5 text-muted-foreground" />
         </button>
       )}
     </div>
